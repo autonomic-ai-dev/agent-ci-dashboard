@@ -2,7 +2,6 @@ import { error } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { Octokit } from 'octokit';
 import { marked } from 'marked';
-import DOMPurify from 'isomorphic-dompurify';
 
 export async function load(event) {
 	const { params, setHeaders } = event;
@@ -101,8 +100,7 @@ export async function load(event) {
 		// Render README
 		let readmeHtml = '<p>No README found.</p>';
 		if (repoData.readme && repoData.readme.text) {
-			const parsed = await marked.parse(repoData.readme.text);
-			readmeHtml = DOMPurify.sanitize(parsed);
+			readmeHtml = await marked.parse(repoData.readme.text);
 		}
 
 		// Map releases
