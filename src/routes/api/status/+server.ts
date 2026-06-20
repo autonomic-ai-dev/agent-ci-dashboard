@@ -62,17 +62,12 @@ export async function GET(event) {
 				refs(refPrefix: "refs/tags/", last: 1) {
 					nodes {
 						name
-						target {
-							... on Commit {
-								...CommitDetails
-							}
-							... on Tag {
-								target {
-									... on Commit {
-										...CommitDetails
-									}
-								}
-							}
+					}
+				}
+				defaultBranchRef {
+					target {
+						... on Commit {
+							...CommitDetails
 						}
 					}
 				}
@@ -88,11 +83,14 @@ export async function GET(event) {
 		const statuses = AGENT_REPOS.map((repo, idx) => {
 			const repoData = response[`repo${idx}`];
 			
-			if (!repoData || !repoData.refs || repoData.refs.nodes.length === 0) {
+			const latestTagNode = repoData?.refs?.nodes?.[0];
+			const tagName = latestTagNode ? latestTagNode.name : null;
+
+			if (!repoData || !repoData.defaultBranchRef) {
 				return {
 					repo,
-					tag: null,
-					status: 'no-tags',
+					tag: tagName,
+					status: 'no-runs',
 					sha: null,
 					htmlUrl: `https://github.com/${GITHUB_OWNER}/${repo}`,
 					actor: null,
@@ -101,8 +99,7 @@ export async function GET(event) {
 				};
 			}
 
-			const latestTagNode = repoData.refs.nodes[0];
-			const target = latestTagNode.target.target || latestTagNode.target; // Handle Tag vs Commit targets
+			const target = repoData.defaultBranchRef.target;
 			const sha = target.oid;
 			const actorNode = target.author?.user;
 			
@@ -124,7 +121,7 @@ export async function GET(event) {
 			// Derive an aggregate status based on workflows
 			let aggregateStatus = 'success';
 			if (workflows.length === 0) {
-				aggregateStatus = 'pending';
+				aggregateStatus = 'no-runs';
 			} else if (workflows.some((w: any) => w.status === 'failure' || w.status === 'timed_out')) {
 				aggregateStatus = 'failure';
 			} else if (workflows.some((w: any) => w.status === 'in_progress' || w.status === 'queued' || w.status === 'pending')) {
@@ -133,7 +130,7 @@ export async function GET(event) {
 
 			return {
 				repo,
-				tag: latestTagNode.name,
+				tag: tagName,
 				status: aggregateStatus,
 				sha,
 				htmlUrl: `https://github.com/${GITHUB_OWNER}/${repo}`,
