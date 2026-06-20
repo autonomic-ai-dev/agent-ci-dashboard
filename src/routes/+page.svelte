@@ -164,7 +164,7 @@
 									<span class="font-mono bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-border-light dark:border-border-dark group-hover:border-indigo-500/30 transition-colors">{item.tag}</span>
 								{/if}
 								{#if item.sha}
-									<span class="font-mono opacity-60">{item.sha}</span>
+									<span class="font-mono opacity-60">{item.sha.substring(0, 7)}</span>
 								{/if}
 							</div>
 						</div>
