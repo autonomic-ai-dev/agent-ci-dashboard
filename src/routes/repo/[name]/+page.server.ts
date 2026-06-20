@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { Octokit } from 'octokit';
-import MarkdownIt from 'markdown-it';
+import { marked } from 'marked';
 import sanitizeHtml from 'sanitize-html';
 
 export async function load(event) {
@@ -101,8 +101,7 @@ export async function load(event) {
 		// Render README
 		let readmeHtml = '<p>No README found.</p>';
 		if (repoData.readme && repoData.readme.text) {
-			const md = new MarkdownIt({ html: true, breaks: true, linkify: true });
-			const rawHtml = md.render(repoData.readme.text);
+			const rawHtml = await marked.parse(repoData.readme.text);
 			readmeHtml = sanitizeHtml(rawHtml, {
 				allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'h1', 'h2', 'h3', 'span']),
 				allowedAttributes: {
