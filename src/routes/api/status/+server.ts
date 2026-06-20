@@ -116,7 +116,18 @@ export async function GET(event) {
 
 			const validRuns = (target.checkSuites?.nodes || []).filter((node: any) => node && node.workflowRun);
 
-			const workflows = validRuns.map((run: any) => ({
+			// Deduplicate runs by workflow name, keeping the most recent attempt
+			const sortedRuns = validRuns.sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+			const uniqueRunsMap = new Map();
+			for (const run of sortedRuns) {
+				const name = run.workflowRun?.workflow?.name || 'Workflow';
+				if (!uniqueRunsMap.has(name)) {
+					uniqueRunsMap.set(name, run);
+				}
+			}
+			const latestUniqueRuns = Array.from(uniqueRunsMap.values());
+
+			const workflows = latestUniqueRuns.map((run: any) => ({
 				id: run.workflowRun?.databaseId || null,
 				name: run.workflowRun?.workflow?.name || 'Workflow',
 				status: run.status !== 'COMPLETED' ? run.status.toLowerCase() : (run.conclusion || 'completed').toLowerCase(),
