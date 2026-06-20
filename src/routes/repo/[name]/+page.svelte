@@ -184,9 +184,30 @@
 
 	<!-- Page Title -->
 	<header class="mb-8">
-		<h1 class="text-4xl font-bold text-text-primary-light dark:text-text-primary-dark tracking-tight mb-3">
-			{data.repo}
-		</h1>
+		<div class="flex items-center gap-4 mb-3">
+			<h1 class="text-4xl font-bold text-text-primary-light dark:text-text-primary-dark tracking-tight">
+				{data.repo}
+			</h1>
+			{#if commits && commits.length > 0}
+				{@const latestStatus = commits[0].status}
+				{@const StatusIcon = getStatusIcon(latestStatus)}
+				<div class={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase border bg-surface-light dark:bg-surface-dark ${getStatusColorClasses(latestStatus)}`}>
+					<span class="relative flex h-2 w-2 mr-1">
+					  {#if latestStatus === 'pending'}
+						<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+						<span class="relative inline-flex rounded-full h-2 w-2 bg-yellow-500" style="box-shadow: 0 0 8px currentColor"></span>
+					  {:else if latestStatus === 'success'}
+						<span class="relative inline-flex rounded-full h-2 w-2 bg-green-500" style="box-shadow: 0 0 8px currentColor"></span>
+					  {:else if latestStatus === 'failure'}
+						<span class="relative inline-flex rounded-full h-2 w-2 bg-red-500" style="box-shadow: 0 0 8px currentColor"></span>
+					  {:else}
+						<span class="relative inline-flex rounded-full h-2 w-2 bg-gray-500" style="box-shadow: 0 0 8px currentColor"></span>
+					  {/if}
+					</span>
+					{latestStatus}
+				</div>
+			{/if}
+		</div>
 		<p class="text-text-secondary-light dark:text-text-secondary-dark">Repository Details & Status History</p>
 	</header>
 
