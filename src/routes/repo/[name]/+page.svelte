@@ -184,7 +184,7 @@
 
 	<!-- Page Title -->
 	<header class="mb-8">
-		<div class="flex items-center gap-4 mb-3">
+		<div class="flex items-center justify-between gap-4 mb-3">
 			<h1 class="text-4xl font-bold text-text-primary-light dark:text-text-primary-dark tracking-tight">
 				{data.repo}
 			</h1>
