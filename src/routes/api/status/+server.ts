@@ -118,6 +118,19 @@ export async function GET(event) {
 				updatedAt: run.updatedAt
 			}));
 
+			// Sort workflows: Failures first, then Pending, then Success. Secondary sort by date.
+			const getPriority = (status: string) => {
+				if (['failure', 'timed_out', 'cancelled', 'action_required'].includes(status)) return 0;
+				if (['in_progress', 'queued', 'pending'].includes(status)) return 1;
+				return 2;
+			};
+
+			workflows.sort((a: any, b: any) => {
+				const pDiff = getPriority(a.status) - getPriority(b.status);
+				if (pDiff !== 0) return pDiff;
+				return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+			});
+
 			let aggregateStatus = 'success';
 			if (workflows.length === 0) {
 				aggregateStatus = 'no-runs';
