@@ -387,7 +387,7 @@
 				<div class="flex items-center gap-3">
 					<TerminalIcon size={16} class="text-gray-400" />
 					<h3 class="text-gray-200 font-mono text-sm font-semibold">{terminalTitle} Logs</h3>
-					{#if data.session && (terminalRunStatus === 'failure' || terminalRunStatus === 'timed_out')}
+					{#if data.session && (terminalRunStatus === 'failure' || terminalRunStatus === 'timed_out' || terminalRunStatus === 'cancelled')}
 						<div class="w-px h-4 bg-border-dark mx-2"></div>
 						<button 
 							onclick={(e) => { e.preventDefault(); rerunWorkflow(terminalRunId, 'failed'); }}
