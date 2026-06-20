@@ -11,7 +11,7 @@ export async function GET(event) {
 	const token = session?.accessToken || env.GITHUB_TOKEN;
 
 	setHeaders({
-		'Cache-Control': 'max-age=60, s-maxage=60, stale-while-revalidate=120'
+		'Cache-Control': 'max-age=0, s-maxage=60, stale-while-revalidate=120'
 	});
 
 	const repo = params.name;

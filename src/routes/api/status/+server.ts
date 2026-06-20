@@ -16,7 +16,7 @@ export async function GET(event) {
 	const token = session?.accessToken || env.GITHUB_TOKEN;
 
 	setHeaders({
-		'Cache-Control': 'max-age=300, s-maxage=300, stale-while-revalidate=600'
+		'Cache-Control': 'max-age=0, s-maxage=60, stale-while-revalidate=120'
 	});
 
 	const octokit = new Octokit({
