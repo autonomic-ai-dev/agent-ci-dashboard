@@ -3,16 +3,10 @@ import { Octokit } from 'octokit';
 import { env } from '$env/dynamic/private';
 
 const GITHUB_OWNER = 'autonomic-ai-dev';
+
 const AGENT_REPOS = [
-	'agent-body',
-	'agent-brain',
-	'agent-eyes',
-	'agent-heart',
-	'agent-immune',
-	'agent-mouth',
-	'agent-muscle',
-	'agent-nerves',
-	'agent-spine'
+	'agent-body', 'agent-brain', 'agent-eyes', 'agent-heart', 
+	'agent-immune', 'agent-mouth', 'agent-muscle', 'agent-nerves', 'agent-spine'
 ];
 
 export async function GET(event) {
@@ -22,7 +16,7 @@ export async function GET(event) {
 	const token = session?.accessToken || env.GITHUB_TOKEN;
 
 	setHeaders({
-		'Cache-Control': 'max-age=60, s-maxage=60, stale-while-revalidate=120'
+		'Cache-Control': 'max-age=120, s-maxage=120, stale-while-revalidate=300'
 	});
 
 	const octokit = new Octokit({
@@ -48,7 +42,7 @@ export async function GET(event) {
 						url
 					}
 				}
-				checkSuites(first: 10) {
+				checkSuites(first: 3) {
 					nodes {
 						status
 						conclusion
@@ -118,68 +112,40 @@ export async function GET(event) {
 				url: actorNode.url
 			} : null;
 
-			// Extract workflow runs from check suites
-			const checkSuites = target.checkSuites?.nodes || [];
-			const validRuns = checkSuites.filter((cs: any) => cs.workflowRun !== null);
-			
-			let overallStatus = 'unknown';
-			let updatedAt = target.pushedDate || null;
-			const workflows = [];
+			const validRuns = (target.checkSuites?.nodes || []).filter((node: any) => node && node.workflowRun);
 
-			if (validRuns.length === 0) {
-				overallStatus = 'no-runs';
-			} else {
-				// Get latest update time from runs
-				if (!updatedAt && validRuns[0]) {
-					updatedAt = validRuns[0].updatedAt;
-				}
+			const workflows = validRuns.map((run: any) => ({
+				id: run.workflowRun?.databaseId || null,
+				name: run.workflowRun?.workflow?.name || 'Workflow',
+				status: run.status !== 'COMPLETED' ? run.status.toLowerCase() : (run.conclusion || 'completed').toLowerCase(),
+				updatedAt: run.updatedAt
+			}));
 
-				const isPending = validRuns.some((run: any) => run.status !== 'COMPLETED');
-				const hasFailure = validRuns.some((run: any) => run.status === 'COMPLETED' && (run.conclusion === 'FAILURE' || run.conclusion === 'TIMED_OUT' || run.conclusion === 'CANCELLED'));
-				
-				if (isPending) {
-					overallStatus = 'pending';
-				} else if (hasFailure) {
-					overallStatus = 'failure';
-				} else {
-					const allSuccess = validRuns.every((run: any) => run.status === 'COMPLETED' && (run.conclusion === 'SUCCESS' || run.conclusion === 'SKIPPED'));
-					if (allSuccess) {
-						overallStatus = 'success';
-					}
-				}
-
-				for (const run of validRuns.slice(0, 10)) {
-					const runName = run.workflowRun?.workflow?.name || 'Workflow';
-					const statusString = run.status !== 'COMPLETED' ? run.status.toLowerCase() : (run.conclusion || 'completed').toLowerCase();
-					workflows.push({
-						id: run.workflowRun?.databaseId || Math.random().toString(),
-						name: runName,
-						status: statusString,
-					});
-				}
+			// Derive an aggregate status based on workflows
+			let aggregateStatus = 'success';
+			if (workflows.length === 0) {
+				aggregateStatus = 'pending';
+			} else if (workflows.some((w: any) => w.status === 'failure' || w.status === 'timed_out')) {
+				aggregateStatus = 'failure';
+			} else if (workflows.some((w: any) => w.status === 'in_progress' || w.status === 'queued' || w.status === 'pending')) {
+				aggregateStatus = 'pending';
 			}
 
 			return {
 				repo,
 				tag: latestTagNode.name,
-				status: overallStatus,
-				sha: sha ? sha.substring(0, 7) : null,
-				htmlUrl: `https://github.com/${GITHUB_OWNER}/${repo}/releases/tag/${latestTagNode.name}`,
+				status: aggregateStatus,
+				sha,
+				htmlUrl: `https://github.com/${GITHUB_OWNER}/${repo}`,
 				actor,
-				updatedAt,
+				updatedAt: target.pushedDate,
 				workflows
 			};
 		});
 
-		return json({
-			success: true,
-			data: statuses
-		});
-	} catch (error) {
-		console.error('Failed to fetch global statuses via GraphQL:', error);
-		return json({
-			success: false,
-			error: 'Failed to fetch statuses'
-		}, { status: 500 });
+		return json({ success: true, data: statuses });
+	} catch (e: any) {
+		console.error('Failed to fetch status:', e);
+		return json({ success: false, error: 'Failed to fetch status' }, { status: 500 });
 	}
 }
