@@ -67,7 +67,9 @@ export async function GET(event) {
 
 		return json({ success: true, logs: allLogs });
 	} catch (e: any) {
-		console.error(`Failed to fetch logs for run ${run_id} in ${repo}:`, e.message);
+		if (e.status !== 404) {
+			console.error(`Failed to fetch logs for run ${run_id} in ${repo}:`, e.message);
+		}
 		return json({ success: false, error: 'Logs expired or not found' }, { status: 404 });
 	}
 }

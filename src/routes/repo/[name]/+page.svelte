@@ -317,9 +317,14 @@
 										{#each commit.runs as run}
 											{@const WfIcon = getStatusIcon(run.status)}
 											<div class="group flex items-center justify-between text-[13px] bg-black/5 dark:bg-white/5 border border-border-light/50 dark:border-border-dark/50 px-3 py-2 rounded-lg hover:border-indigo-500/30 transition-colors">
-												<button onclick={(e) => { e.preventDefault(); if (run.id) viewLogs(run.id, run.name); }} class="flex items-center gap-2 flex-1 min-w-0 text-left cursor-pointer focus:outline-none">
+												<button 
+													disabled={run.status === 'queued' || run.status === 'in_progress' || run.status === 'pending'}
+													onclick={(e) => { e.preventDefault(); if (run.id) viewLogs(run.id, run.name); }} 
+													class="flex items-center gap-2 flex-1 min-w-0 text-left focus:outline-none disabled:opacity-70 disabled:cursor-not-allowed group/btn"
+													title={run.status === 'queued' || run.status === 'in_progress' || run.status === 'pending' ? 'Logs will be available when the run completes' : run.name}
+												>
 													<WfIcon size={14} class={run.status === 'success' ? 'text-green-500 dark:text-green-400' : run.status === 'failure' || run.status === 'timed_out' ? 'text-red-500 dark:text-red-400' : 'text-yellow-500 dark:text-yellow-400'} />
-													<span class="text-text-primary-light dark:text-text-primary-dark truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" title={run.name}>{run.name}</span>
+													<span class="text-text-primary-light dark:text-text-primary-dark truncate transition-colors group-[&:not(:disabled)]/btn:group-hover:text-indigo-600 group-[&:not(:disabled)]/btn:dark:group-hover:text-indigo-400">{run.name}</span>
 												</button>
 												
 												<a href={run.url || '#'} target={run.url ? '_blank' : undefined} rel="noopener noreferrer" class="opacity-0 group-hover:opacity-100 p-1.5 ml-2 text-text-secondary-light hover:text-indigo-600 dark:text-text-secondary-dark dark:hover:text-indigo-400 bg-white dark:bg-black rounded border border-border-light dark:border-border-dark shadow-sm transition-all" title="View on GitHub">
