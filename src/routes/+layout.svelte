@@ -54,18 +54,19 @@
 		</div>
 	</div>
 
+	<!-- Global Background effects for Glassmorphism -->
+	<div class="fixed inset-0 z-0 pointer-events-none">
+		<div class="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/20 rounded-full mix-blend-multiply filter blur-[100px] opacity-60 animate-pulse"></div>
+		<div class="absolute top-1/3 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full mix-blend-multiply filter blur-[100px] opacity-60 animate-pulse" style="animation-delay: 2s"></div>
+		<div class="absolute bottom-1/4 left-1/3 w-96 h-96 bg-pink-500/20 rounded-full mix-blend-multiply filter blur-[100px] opacity-60 animate-pulse" style="animation-delay: 4s"></div>
+	</div>
+
 	{#if data.session}
-		<main class="w-full">
+		<main class="w-full relative z-10">
 			{@render children()}
 		</main>
 	{:else}
-		<div class="flex flex-col items-center justify-center min-h-screen p-6 relative overflow-hidden">
-			<!-- Background effects -->
-			<div class="absolute inset-0 z-0">
-				<div class="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/20 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob"></div>
-				<div class="absolute top-1/3 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-2000"></div>
-				<div class="absolute bottom-1/4 left-1/3 w-96 h-96 bg-pink-500/20 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-4000"></div>
-			</div>
+		<div class="flex flex-col items-center justify-center min-h-screen p-6 relative overflow-hidden z-10">
 
 			<div class="bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-3xl p-10 max-w-md w-full shadow-2xl relative z-10 flex flex-col items-center text-center">
 				<div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 mb-6">
