@@ -5,7 +5,7 @@ export const load: LayoutServerLoad = async (event) => {
 	try {
 		session = await event.locals.auth();
 	} catch (e) {
-		// AUTH_URL may not be configured — fall back to unauthenticated mode
+		console.error('Auth Error in layout.server.ts:', e);
 	}
 	
 	return {

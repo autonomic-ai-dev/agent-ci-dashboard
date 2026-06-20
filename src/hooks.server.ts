@@ -10,8 +10,8 @@ export const { handle, signIn, signOut } = SvelteKitAuth({
 		GitHub({ 
 			clientId: env.GITHUB_CLIENT_ID, 
 			clientSecret: env.GITHUB_CLIENT_SECRET,
-			// We need the repo scope to read workflows and trigger actions
-			authorization: { params: { scope: 'repo workflow' } }
+			// We need read:user user:email for Auth.js, and repo workflow for our app
+			authorization: { params: { scope: 'read:user user:email repo workflow' } }
 		})
 	],
 	callbacks: {
