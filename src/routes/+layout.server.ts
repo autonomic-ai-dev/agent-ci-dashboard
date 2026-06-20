@@ -1,4 +1,5 @@
 import type { LayoutServerLoad } from './$types';
+import { signIn, signOut } from '../hooks.server';
 
 export const load: LayoutServerLoad = async (event) => {
 	let session = null;
@@ -12,3 +13,5 @@ export const load: LayoutServerLoad = async (event) => {
 		session
 	};
 };
+
+export const actions = { signIn, signOut };

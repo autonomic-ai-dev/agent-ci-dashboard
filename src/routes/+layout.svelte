@@ -33,8 +33,7 @@
 				<img src={data.session.user?.image} alt="User" class="w-6 h-6 rounded-full" />
 				<span class="text-sm font-medium pr-2">{data.session.user?.name || data.session.user?.email}</span>
 				<div class="w-px h-4 bg-border-light dark:bg-border-dark"></div>
-				<form method="POST" action="/auth/signout">
-					<input type="hidden" name="csrfToken" value="" />
+				<form method="POST" action="?/signOut">
 					<button type="submit" class="text-text-secondary-light hover:text-red-500 dark:text-text-secondary-dark transition-colors pl-1" title="Sign Out">
 						<LogOut size={16} />
 					</button>
@@ -78,8 +77,9 @@
 				<h1 class="text-3xl font-bold mb-3 tracking-tight">Agent CI</h1>
 				<p class="text-text-secondary-light dark:text-text-secondary-dark mb-8">Sign in with your GitHub account to access the mission control dashboard and trigger actions.</p>
 				
-				<form method="POST" action="/auth/signin/github">
-					<input type="hidden" name="csrfToken" value="" />
+				<form method="POST" action="?/signIn">
+					<input type="hidden" name="providerId" value="github" />
+					<input type="hidden" name="options" value='{{"redirectTo": "/"}}' />
 					<button 
 						type="submit"
 						class="w-full flex items-center justify-center gap-3 bg-[#24292F] hover:bg-[#1F2328] dark:bg-white dark:hover:bg-gray-100 text-white dark:text-black px-6 py-3.5 rounded-xl font-semibold transition-all shadow-md hover:shadow-lg"
