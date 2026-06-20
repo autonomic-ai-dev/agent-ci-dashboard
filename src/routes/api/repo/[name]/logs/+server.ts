@@ -7,7 +7,12 @@ const GITHUB_OWNER = 'autonomic-ai-dev';
 
 export async function GET(event) {
 	const { params, url, setHeaders } = event;
-	const session = await event.locals.auth();
+	let session = null;
+	try {
+		session = await event.locals.auth();
+	} catch (e) {
+		// AUTH_URL not configured — fall back to GITHUB_TOKEN
+	}
 	// @ts-ignore
 	const token = session?.accessToken || env.GITHUB_TOKEN;
 

@@ -2,7 +2,12 @@ import { json } from '@sveltejs/kit';
 import { kv } from '@vercel/kv';
 
 export async function POST(event) {
-	const session = await event.locals.auth();
+	let session = null;
+	try {
+		session = await event.locals.auth();
+	} catch (e) {
+		// AUTH_URL not configured — fall back to GITHUB_TOKEN
+	}
 	if (!session) {
 		return json({ success: false, error: 'Unauthorized' }, { status: 401 });
 	}
