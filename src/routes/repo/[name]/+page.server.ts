@@ -1,7 +1,8 @@
 import { error } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { Octokit } from 'octokit';
-import { marked } from 'marked';
+import MarkdownIt from 'markdown-it';
+import sanitizeHtml from 'sanitize-html';
 
 export async function load(event) {
 	const { params, setHeaders } = event;
@@ -100,7 +101,16 @@ export async function load(event) {
 		// Render README
 		let readmeHtml = '<p>No README found.</p>';
 		if (repoData.readme && repoData.readme.text) {
-			readmeHtml = await marked.parse(repoData.readme.text);
+			const md = new MarkdownIt({ html: true, breaks: true, linkify: true });
+			const rawHtml = md.render(repoData.readme.text);
+			readmeHtml = sanitizeHtml(rawHtml, {
+				allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'h1', 'h2', 'h3', 'span']),
+				allowedAttributes: {
+					...sanitizeHtml.defaults.allowedAttributes,
+					'*': ['class', 'id'],
+					'img': ['src', 'alt', 'title', 'width', 'height']
+				}
+			});
 		}
 
 		// Map releases
