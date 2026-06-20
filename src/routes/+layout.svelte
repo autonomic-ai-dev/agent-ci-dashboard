@@ -42,13 +42,13 @@
 		
 		<!-- Theme Toggle Inline -->
 		<div class="relative group bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-full p-1 shadow-sm flex items-center gap-1 overflow-hidden transition-all duration-300 w-[36px] hover:w-[104px]">
-			<button onclick={() => applyTheme('system')} class={`p-1.5 rounded-full transition-colors ${theme === 'system' ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' : 'text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark'}`} title="System">
+			<button aria-label="System theme" onclick={() => applyTheme('system')} class={`p-1.5 rounded-full transition-colors ${theme === 'system' ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' : 'text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark'}`} title="System">
 				<Monitor size={16} />
 			</button>
-			<button onclick={() => applyTheme('light')} class={`p-1.5 rounded-full transition-colors ${theme === 'light' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark'}`} title="Light">
+			<button aria-label="Light theme" onclick={() => applyTheme('light')} class={`p-1.5 rounded-full transition-colors ${theme === 'light' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark'}`} title="Light">
 				<Sun size={16} />
 			</button>
-			<button onclick={() => applyTheme('dark')} class={`p-1.5 rounded-full transition-colors ${theme === 'dark' ? 'bg-indigo-500/10 text-indigo-400 dark:text-indigo-300' : 'text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark'}`} title="Dark">
+			<button aria-label="Dark theme" onclick={() => applyTheme('dark')} class={`p-1.5 rounded-full transition-colors ${theme === 'dark' ? 'bg-indigo-500/10 text-indigo-400 dark:text-indigo-300' : 'text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark'}`} title="Dark">
 				<Moon size={16} />
 			</button>
 		</div>
