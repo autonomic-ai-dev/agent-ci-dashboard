@@ -27,7 +27,7 @@
 	}
 </script>
 
-<div class="min-h-screen bg-base-light dark:bg-base-dark text-text-primary-light dark:text-text-primary-dark transition-colors duration-300">
+<div class="min-h-screen text-text-primary-light dark:text-text-primary-dark transition-colors duration-300">
 	<div class="fixed top-6 right-6 z-50 flex items-center gap-3">
 		{#if data.session}
 			<div class="flex items-center gap-2 px-3 py-1.5 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-full shadow-sm">
