@@ -130,19 +130,30 @@ export async function GET(event) {
 			const commits = repoData.defaultBranchRef?.target?.history?.nodes.map((commit: any) => {
 				const validRuns = (commit.checkSuites?.nodes || []).filter((cs: any) => cs.workflowRun !== null);
 				
+				// Deduplicate runs by workflow name, keeping the most recent attempt
+				const sortedRuns = validRuns.sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+				const uniqueRunsMap = new Map();
+				for (const run of sortedRuns) {
+					const name = run.workflowRun?.workflow?.name || 'Workflow';
+					if (!uniqueRunsMap.has(name)) {
+						uniqueRunsMap.set(name, run);
+					}
+				}
+				const latestUniqueRuns = Array.from(uniqueRunsMap.values());
+				
 				let overallStatus = 'unknown';
-				if (validRuns.length === 0) {
+				if (latestUniqueRuns.length === 0) {
 					overallStatus = 'no-runs';
 				} else {
-					const isPending = validRuns.some((run: any) => run.status !== 'COMPLETED');
-					const hasFailure = validRuns.some((run: any) => run.status === 'COMPLETED' && (run.conclusion === 'FAILURE' || run.conclusion === 'TIMED_OUT' || run.conclusion === 'CANCELLED'));
+					const isPending = latestUniqueRuns.some((run: any) => run.status !== 'COMPLETED');
+					const hasFailure = latestUniqueRuns.some((run: any) => run.status === 'COMPLETED' && (run.conclusion === 'FAILURE' || run.conclusion === 'TIMED_OUT' || run.conclusion === 'CANCELLED'));
 					
-					if (isPending) {
-						overallStatus = 'pending';
-					} else if (hasFailure) {
+					if (hasFailure) {
 						overallStatus = 'failure';
+					} else if (isPending) {
+						overallStatus = 'pending';
 					} else {
-						const allSuccess = validRuns.every((run: any) => run.status === 'COMPLETED' && (run.conclusion === 'SUCCESS' || run.conclusion === 'SKIPPED'));
+						const allSuccess = latestUniqueRuns.every((run: any) => run.status === 'COMPLETED' && (run.conclusion === 'SUCCESS' || run.conclusion === 'SKIPPED'));
 						if (allSuccess) {
 							overallStatus = 'success';
 						}
@@ -158,7 +169,7 @@ export async function GET(event) {
 						avatarUrl: commit.author.user.avatarUrl
 					} : null,
 					status: overallStatus,
-					runs: validRuns.map((run: any) => ({
+					runs: latestUniqueRuns.map((run: any) => ({
 						id: run.workflowRun?.databaseId || null,
 						name: run.workflowRun?.workflow?.name || 'Workflow',
 						url: run.workflowRun?.url,
