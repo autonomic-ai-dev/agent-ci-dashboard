@@ -102,12 +102,34 @@ export async function load(event) {
 		let readmeHtml = '<p>No README found.</p>';
 		if (repoData.readme && repoData.readme.text) {
 			const rawHtml = await marked.parse(repoData.readme.text);
+			console.log(rawHtml)
 			readmeHtml = sanitizeHtml(rawHtml, {
-				allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'h1', 'h2', 'h3', 'span']),
+				allowedTags: [
+					...sanitizeHtml.defaults.allowedTags,
+					'img',
+					'h1',
+					'h2',
+					'h3',
+					'h4',
+					'h5',
+					'h6',
+					'span',
+					'table',
+					'thead',
+					'tbody',
+					'tr',
+					'th',
+					'td',
+					'pre',
+					'code',
+					'hr'
+				],
 				allowedAttributes: {
-					...sanitizeHtml.defaults.allowedAttributes,
 					'*': ['class', 'id'],
-					'img': ['src', 'alt', 'title', 'width', 'height']
+					a: ['href', 'name', 'target'],
+					code: ['class'],
+					pre: ['class'],
+					img: ['src', 'alt', 'title', 'width', 'height']
 				}
 			});
 		}
@@ -130,7 +152,7 @@ export async function load(event) {
 		// Map recent commits and their CI runs
 		const commits = repoData.defaultBranchRef?.target?.history?.nodes.map((commit: any) => {
 			const validRuns = (commit.checkSuites?.nodes || []).filter((cs: any) => cs.workflowRun !== null);
-			
+
 			// Deduplicate runs by workflow name, keeping the most recent attempt
 			const sortedRuns = validRuns.sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 			const uniqueRunsMap = new Map();
@@ -141,14 +163,14 @@ export async function load(event) {
 				}
 			}
 			const latestUniqueRuns = Array.from(uniqueRunsMap.values());
-			
+
 			let overallStatus = 'unknown';
 			if (latestUniqueRuns.length === 0) {
 				overallStatus = 'no-runs';
 			} else {
 				const isPending = latestUniqueRuns.some((run: any) => run.status !== 'COMPLETED');
 				const hasFailure = latestUniqueRuns.some((run: any) => run.status === 'COMPLETED' && (run.conclusion === 'FAILURE' || run.conclusion === 'TIMED_OUT' || run.conclusion === 'CANCELLED'));
-				
+
 				if (hasFailure) {
 					overallStatus = 'failure';
 				} else if (isPending) {
