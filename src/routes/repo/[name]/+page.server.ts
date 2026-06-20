@@ -131,10 +131,10 @@ export async function load(event) {
 				const isPending = validRuns.some((run: any) => run.status !== 'COMPLETED');
 				const hasFailure = validRuns.some((run: any) => run.status === 'COMPLETED' && (run.conclusion === 'FAILURE' || run.conclusion === 'TIMED_OUT' || run.conclusion === 'CANCELLED'));
 				
-				if (isPending) {
-					overallStatus = 'pending';
-				} else if (hasFailure) {
+				if (hasFailure) {
 					overallStatus = 'failure';
+				} else if (isPending) {
+					overallStatus = 'pending';
 				} else {
 					const allSuccess = validRuns.every((run: any) => run.status === 'COMPLETED' && (run.conclusion === 'SUCCESS' || run.conclusion === 'SKIPPED'));
 					if (allSuccess) {
