@@ -67,7 +67,8 @@ Push notifications store subscriptions in a Redis-compatible KV store.
 
 Mirror all variables from `.env.example` in Vercel's **Settings → Environment Variables**.
 
-- Set `AUTH_URL` to your deployed domain.
+- Set `AUTH_URL` to your deployed domain (e.g. `https://agent-ci-dashboard.vercel.app`).
+- Ensure `AUTH_SECRET`, `GITHUB_CLIENT_ID`, and `GITHUB_CLIENT_SECRET` are set for **Production** (and Preview if you test preview URLs).
 - Create a **separate** GitHub OAuth App for production with its callback URL pointing to your deployed domain: `https://<your-domain>/auth/callback/github`.
 
 ### 3. GitHub Webhook (Push Notifications)
