@@ -21,6 +21,7 @@
 	let terminalLogs = $state('');
 	let terminalTitle = $state('');
 	let terminalRunId = $state('');
+	let terminalRunStatus = $state('');
 	let terminalLoading = $state(false);
 	
 	let rerunningIds = $state<Set<string>>(new Set());
@@ -34,10 +35,11 @@
 
 	let observerTarget = $state<HTMLElement | null>(null);
 
-	async function viewLogs(runId: string, title: string) {
+	async function viewLogs(runId: string, title: string, status: string) {
 		terminalOpen = true;
 		terminalTitle = title;
 		terminalRunId = runId;
+		terminalRunStatus = status;
 		terminalLogs = '';
 		terminalLoading = true;
 		
@@ -319,7 +321,7 @@
 											<div class="group flex items-center justify-between text-[13px] bg-black/5 dark:bg-white/5 border border-border-light/50 dark:border-border-dark/50 px-3 py-2 rounded-lg hover:border-indigo-500/30 transition-colors">
 												<button 
 													disabled={run.status === 'queued' || run.status === 'in_progress' || run.status === 'pending'}
-													onclick={(e) => { e.preventDefault(); if (run.id) viewLogs(run.id, run.name); }} 
+													onclick={(e) => { e.preventDefault(); if (run.id) viewLogs(run.id, run.name, run.status); }} 
 													class="flex items-center gap-2 flex-1 min-w-0 text-left focus:outline-none disabled:opacity-70 disabled:cursor-not-allowed group/btn"
 													title={run.status === 'queued' || run.status === 'in_progress' || run.status === 'pending' ? 'Logs will be available when the run completes' : run.name}
 												>
@@ -363,7 +365,7 @@
 				<div class="flex items-center gap-3">
 					<TerminalIcon size={16} class="text-gray-400" />
 					<h3 class="text-gray-200 font-mono text-sm font-semibold">{terminalTitle} Logs</h3>
-					{#if data.session}
+					{#if data.session && (terminalRunStatus === 'failure' || terminalRunStatus === 'timed_out')}
 						<div class="w-px h-4 bg-border-dark mx-2"></div>
 						<button 
 							onclick={(e) => { e.preventDefault(); rerunWorkflow(terminalRunId, 'failed'); }}
