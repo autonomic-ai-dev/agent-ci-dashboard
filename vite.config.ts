@@ -14,6 +14,9 @@ export default defineConfig({
 			adapter: adapter()
 		}),
 		VitePWA({
+			strategies: 'injectManifest',
+			srcDir: 'src',
+			filename: 'sw.ts',
 			registerType: 'autoUpdate',
 			manifest: {
 				name: 'Agent CI Dashboard',

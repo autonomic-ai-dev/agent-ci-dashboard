@@ -1,42 +1,80 @@
-# sv
+# Agent CI Dashboard
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+A centralized, "Mission Control" dashboard for tracking GitHub workflows across the `autonomic-ai-dev` agent ecosystem.
 
-## Creating a project
+## Features
 
-If you're seeing this, you've probably already done this step. Congrats!
+- **Hybrid Auth Model:** Publicly viewable dashboard, but secure actions (triggering workflows, viewing logs) require GitHub OAuth.
+- **In-App Terminal:** View raw build logs with ANSI color parsing without leaving the dashboard.
+- **PWA Ready:** Installable on mobile and desktop as a native app.
+- **True Web Push:** Receive background push notifications instantly when a build fails (powered by Vercel KV and Webhooks).
+- **GraphQL Optimized:** Batches 10 API requests into 1 for maximum rate-limit efficiency.
 
+## Local Setup
+
+### 1. Install Dependencies
+This project uses Bun for package management.
 ```sh
-# create a new project
-npx sv create my-app
+bun install
 ```
 
-To recreate this project with the same configuration:
+### 2. Environment Variables
+Create a `.env` file in the root directory:
 
-```sh
-# recreate this project
-npx sv@0.16.1 create --template minimal --types ts --add sveltekit-adapter="adapter:vercel" prettier --install npm agent-ci-dashboard
+```env
+# GitHub PAT with `repo` and `workflow` scopes
+GITHUB_TOKEN=github_pat_...
+
+# Auth.js Secrets
+AUTH_SECRET="generated-base64-secret"
+AUTH_URL="http://localhost:5173"
+
+# GitHub OAuth App (For Local Dev: Callback URL = http://localhost:5173/auth/callback/github)
+GITHUB_CLIENT_ID="..."
+GITHUB_CLIENT_SECRET="..."
+
+# VAPID Keys for Push Notifications
+VAPID_PUBLIC_KEY="..."
+VAPID_PRIVATE_KEY="..."
+
+# Webhook Secret for Push Notifications
+WEBHOOK_SECRET="..."
 ```
 
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
+### 3. Run Locally
 ```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+bun run dev
 ```
 
-## Building
+## Vercel Production Setup
 
-To create a production version of your app:
+To deploy this project to Vercel, you need to configure the following pieces of infrastructure:
 
-```sh
-npm run build
-```
+### 1. Vercel KV (Redis)
+Push Notifications require a database to store subscriptions.
+1. Go to your Vercel Project Dashboard -> **Storage**.
+2. Create a new **KV Database**.
+3. Link it to this project (this will automatically inject `KV_REST_API_URL` and `KV_REST_API_TOKEN` into your environments).
 
-You can preview the production build with `npm run preview`.
+### 2. Vercel Environment Variables
+Ensure all variables from your `.env` are mirrored in Vercel's **Settings -> Environment Variables** tab.
+Make sure the `AUTH_URL` is set to your live domain (e.g., `https://agent-ci-dashboard.vercel.app`).
+Make sure the `GITHUB_CLIENT_ID` and `SECRET` belong to your *Production* GitHub OAuth App.
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+### 3. GitHub Webhook (Push Notifications)
+To receive push notifications the second a build fails:
+1. Go to your GitHub Organization -> **Settings** -> **Webhooks**.
+2. Click **Add webhook**.
+3. Payload URL: `https://agent-ci-dashboard.vercel.app/api/webhook/github`
+4. Content type: `application/json`
+5. Secret: The value of your `WEBHOOK_SECRET`.
+6. Select **Let me select individual events**, and check **Workflow runs**.
+7. Save webhook.
+
+## Continuous Integration
+This repository uses GitHub Actions (`.github/workflows/deploy.yml`) to automatically build and deploy to Vercel on pushes to `master`.
+
+Required GitHub Secrets for CI:
+- `VERCEL_ORG_ID`
+- `VERCEL_PROJECT_ID`
+- `VERCEL_TOKEN`

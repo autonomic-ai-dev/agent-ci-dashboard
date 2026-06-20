@@ -102,12 +102,62 @@
 			<p class="text-text-secondary-light dark:text-text-secondary-dark font-medium">Mission Control & Repository Health</p>
 		</div>
 		
-		<div class="flex items-center gap-3 text-sm text-text-secondary-light dark:text-text-secondary-dark font-medium px-4 py-2 bg-surface-light dark:bg-surface-dark rounded-full border border-border-light dark:border-border-dark shadow-sm">
-			<span class="relative flex h-2 w-2">
-			  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-			  <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-			</span>
-			<span>Live Updates • Last sync: {lastUpdated.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+		<div class="flex items-center gap-3">
+			{#if typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window}
+				<button 
+					class="px-4 py-2 rounded-full text-sm font-medium bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 hover:bg-indigo-500/20 transition-all shadow-sm flex items-center gap-2"
+					onclick={async () => {
+						try {
+							const result = await Notification.requestPermission();
+							if (result === 'granted') {
+								const reg = await navigator.serviceWorker.ready;
+								
+								// Import public key dynamically
+								const { env } = await import('$env/dynamic/public');
+								const applicationServerKey = env.PUBLIC_VAPID_KEY;
+								
+								if (!applicationServerKey) {
+									alert('Push notifications are not configured on this server.');
+									return;
+								}
+								
+								const subscription = await reg.pushManager.subscribe({
+									userVisibleOnly: true,
+									applicationServerKey
+								});
+								
+								const res = await fetch('/api/push/subscribe', {
+									method: 'POST',
+									body: JSON.stringify({ subscription }),
+									headers: { 'Content-Type': 'application/json' }
+								});
+								
+								if (res.ok) {
+									alert('Push Notifications Enabled! You will now receive alerts when builds fail.');
+								} else {
+									const json = await res.json();
+									alert(`Failed to save subscription: ${json.error || 'Unknown error'}`);
+								}
+							} else {
+								alert('Notification permission denied.');
+							}
+						} catch (e) {
+							console.error('Error enabling push notifications:', e);
+							alert('An error occurred while enabling push notifications.');
+						}
+					}}
+				>
+					<AlertCircle size={14} /> Enable Push
+				</button>
+			{/if}
+
+			<div class="flex items-center gap-3 text-sm text-text-secondary-light dark:text-text-secondary-dark font-medium px-4 py-2 bg-surface-light dark:bg-surface-dark rounded-full border border-border-light dark:border-border-dark shadow-sm">
+				<span class="relative flex h-2 w-2">
+				  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+				  <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+				</span>
+				<span>Live Updates • Last sync: {lastUpdated.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+			</div>
 		</div>
 	</header>
 
