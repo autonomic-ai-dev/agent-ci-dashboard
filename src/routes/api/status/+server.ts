@@ -34,7 +34,7 @@ export async function GET(event) {
 		const query = `
 			fragment CommitDetails on Commit {
 				oid
-				pushedDate
+				committedDate
 				author {
 					user {
 						login
@@ -138,7 +138,7 @@ export async function GET(event) {
 				sha,
 				htmlUrl: `https://github.com/${GITHUB_OWNER}/${repo}`,
 				actor,
-				updatedAt: target.pushedDate,
+				updatedAt: target.committedDate,
 				workflows
 			};
 		});
