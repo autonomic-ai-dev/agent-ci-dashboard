@@ -4,6 +4,23 @@ A centralized, "Mission Control" dashboard for tracking GitHub Actions workflows
 
 ## Features
 
+```mermaid
+graph TD
+    subgraph Vercel
+        App[SvelteKit App<br>Auth.js]
+        KV[(Vercel KV<br>Push Subscriptions)]
+    end
+    subgraph GitHub
+        Actions[GitHub Actions]
+        Webhooks[Webhooks]
+        OAuth[OAuth App]
+    end
+    App <--> KV
+    Webhooks -- "Build status" --> App
+    App -- "Trigger" --> Actions
+    App <--> OAuth
+```
+
 - **Hybrid Auth Model:** Publicly viewable dashboard — secure actions (triggering workflows, viewing logs) require GitHub OAuth sign-in.
 - **In-App Terminal:** View raw build logs with ANSI color parsing without leaving the dashboard.
 - **PWA Ready:** Installable on mobile and desktop as a native app.
