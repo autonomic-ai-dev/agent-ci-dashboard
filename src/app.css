@@ -24,9 +24,23 @@
 
 @layer base {
   body {
-    @apply bg-base-light text-text-primary-light transition-colors duration-300 antialiased min-h-screen flex flex-col;
+    @apply text-text-primary-light transition-colors duration-300 antialiased min-h-screen flex flex-col relative;
+    background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
   }
   .dark body {
-    @apply bg-base-dark text-text-primary-dark;
+    @apply text-text-primary-dark;
+    background: radial-gradient(circle at top right, #1e1b4b, transparent 40%),
+                radial-gradient(circle at bottom left, #0f172a, transparent 40%),
+                linear-gradient(to bottom right, #09090b, #000000);
+    background-attachment: fixed;
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    @apply bg-white/70 dark:bg-zinc-900/40 backdrop-blur-xl border border-white/40 dark:border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.3)];
+  }
+  .glass-card:hover {
+    @apply bg-white/90 dark:bg-zinc-900/60 border-white/60 dark:border-white/20 shadow-[0_8px_32px_0_rgba(31,38,135,0.1)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.5)];
   }
 }

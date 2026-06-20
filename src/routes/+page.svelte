@@ -199,7 +199,7 @@
 				{@const StatusIcon = getStatusIcon(item.status)}
 				<a 
 					href={`/repo/${item.repo}`} 
-					class="group relative bg-surface-light dark:bg-surface-dark rounded-xl p-5 border border-border-light dark:border-border-dark flex flex-col overflow-hidden transition-all duration-300 hover:border-indigo-500/30 dark:hover:border-indigo-400/30 hover:shadow-lg dark:hover:shadow-2xl dark:hover:shadow-black/60 hover:-translate-y-0.5"
+					class="group relative glass-card rounded-2xl p-5 flex flex-col overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 dark:hover:shadow-indigo-500/20 hover:-translate-y-1"
 				>
 					<!-- Header -->
 					<div class="flex items-start justify-between mb-4 z-10 relative">

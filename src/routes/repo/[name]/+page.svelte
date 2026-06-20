@@ -217,7 +217,7 @@
 	<div class="flex flex-col gap-12">
 		{#if activeTab === 'readme'}
 			<!-- README Section -->
-			<section class="bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-2xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
+			<section class="glass-card rounded-2xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
 				<div class="p-6 md:p-8 overflow-x-auto">
 					<article class="prose prose-slate dark:prose-invert max-w-none prose-headings:font-semibold prose-a:text-indigo-600 dark:prose-a:text-indigo-400 prose-pre:bg-base-light dark:prose-pre:bg-base-dark prose-pre:border prose-pre:border-border-light dark:prose-pre:border-border-dark">
 						{@html data.readmeHtml}
@@ -231,7 +231,7 @@
 				{#if releases && releases.length > 0}
 					<div class="flex flex-col gap-6">
 						{#each releases as release}
-							<a href={release.url} target="_blank" rel="noopener noreferrer" class="group block bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all hover:border-indigo-500/30">
+							<a href={release.url} target="_blank" rel="noopener noreferrer" class="group block glass-card rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all hover:shadow-indigo-500/10">
 								<div class="bg-black/5 dark:bg-white/5 border-b border-border-light dark:border-border-dark px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
 									<div class="flex flex-col gap-1">
 										<h3 class="text-lg font-bold text-text-primary-light dark:text-text-primary-dark group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
@@ -280,7 +280,7 @@
 					<div class="flex flex-col gap-4">
 						{#each commits as commit}
 							{@const StatusIcon = getStatusIcon(commit.status)}
-							<div class="bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4">
+							<div class="glass-card rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4">
 								
 								<!-- Commit Header -->
 								<div class="flex justify-between items-start">
