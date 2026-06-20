@@ -167,10 +167,6 @@
 <svelte:head>
 	<title>{data.repo} — Agent CI Dashboard</title>
 	<meta name="description" content="CI/CD pipeline status, release history, and build logs for {data.repo} in the Autonomic AI agent ecosystem." />
-	<link rel="canonical" href="https://agent-ci-dashboard.vercel.app/repo/{data.repo}" />
-	<meta property="og:title" content="{data.repo} — Agent CI Dashboard" />
-	<meta property="og:description" content="CI/CD pipeline status, release history, and build logs for {data.repo}." />
-	<meta property="og:url" content="https://agent-ci-dashboard.vercel.app/repo/{data.repo}" />
 </svelte:head>
 
 <div class="max-w-[1000px] mx-auto px-6 py-12 flex flex-col min-h-[calc(100vh-4rem)] relative z-10">
