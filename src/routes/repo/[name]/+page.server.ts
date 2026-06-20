@@ -1,8 +1,19 @@
 import { error } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { Octokit } from 'octokit';
-import { marked } from 'marked';
+import { marked, Renderer } from 'marked';
 import sanitizeHtml from 'sanitize-html';
+
+// Custom renderer: wrap code blocks with not-prose to avoid Tailwind Typography backtick pseudo-elements
+const renderer = new Renderer();
+renderer.code = ({ text, lang }) => {
+	const langClass = lang ? ` language-${lang}` : '';
+	return `<pre class="not-prose"><code class="not-prose${langClass}">${text}</code></pre>`;
+};
+renderer.codespan = ({ text }) => {
+	return `<code class="inline-code">${text}</code>`;
+};
+marked.setOptions({ renderer });
 
 export async function load(event) {
 	const { params, setHeaders } = event;

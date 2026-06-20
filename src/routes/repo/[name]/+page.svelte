@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { ArrowLeft, FileText, Tag, Clock, Activity, CheckCircle, XCircle, AlertCircle, Loader2, RefreshCw, Terminal as TerminalIcon, X } from '@lucide/svelte';
-	import { onMount } from 'svelte';
+import { ArrowLeft, FileText, Tag, Clock, Activity, CheckCircle, XCircle, AlertCircle, Loader2, RefreshCw, Terminal as TerminalIcon, X } from '@lucide/svelte';
+import { onMount } from 'svelte';
+import mermaid from 'mermaid';
 	
 	let { data } = $props();
 
@@ -119,6 +120,27 @@
 			}
 		}
 	}
+
+	mermaid.initialize({
+		startOnLoad: false,
+		theme: 'dark',
+		themeVariables: {
+			primaryColor: '#06b6d4',
+			primaryTextColor: '#e2e8f0',
+			primaryBorderColor: '#0891b2',
+			lineColor: '#334155',
+			secondaryColor: '#0f172a',
+			tertiaryColor: '#1e293b'
+		}
+	});
+
+	$effect(() => {
+		if (activeTab === 'readme') {
+			requestAnimationFrame(() => {
+				mermaid.run({ querySelector: '.language-mermaid' });
+			});
+		}
+	});
 
 	onMount(() => {
 		const observer = new IntersectionObserver((entries) => {
@@ -433,5 +455,20 @@
 	}
 	.custom-scrollbar::-webkit-scrollbar-thumb:hover {
 		background: #8B949E;
+	}
+
+	:global(.inline-code::before),
+	:global(.inline-code::after) {
+		content: none !important;
+	}
+
+	:global(.prose :where(code):not(:where([class~="not-prose"] *))::before),
+	:global(.prose :where(code):not(:where([class~="not-prose"] *))::after) {
+		content: none !important;
+	}
+
+	:global(.language-mermaid) {
+		background: transparent !important;
+		padding: 0 !important;
 	}
 </style>
