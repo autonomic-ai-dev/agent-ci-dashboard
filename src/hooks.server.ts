@@ -3,6 +3,8 @@ import GitHub from '@auth/sveltekit/providers/github';
 import { env } from '$env/dynamic/private';
 
 export const { handle, signIn, signOut } = SvelteKitAuth({
+	trustHost: true,
+	basePath: '/auth',
 	secret: env.AUTH_SECRET,
 	providers: [
 		GitHub({ 
