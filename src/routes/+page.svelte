@@ -83,7 +83,12 @@
 </script>
 
 <svelte:head>
-	<title>Agent CI Dashboard</title>
+	<title>Agent CI Dashboard — Mission Control for AI Agents</title>
+	<meta name="description" content="Real-time CI/CD pipeline monitoring, push notifications, and log viewer for the Autonomic AI agent ecosystem." />
+	<link rel="canonical" href="https://agent-ci-dashboard.vercel.app/" />
+	<meta property="og:title" content="Agent CI Dashboard — Mission Control for AI Agents" />
+	<meta property="og:description" content="Real-time CI/CD pipeline monitoring, push notifications, and log viewer for the Autonomic AI agent ecosystem." />
+	<meta property="og:url" content="https://agent-ci-dashboard.vercel.app/" />
 </svelte:head>
 
 <div class="max-w-[1200px] mx-auto px-6 py-12 flex flex-col min-h-screen relative z-10">

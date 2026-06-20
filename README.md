@@ -29,7 +29,8 @@ GITHUB_TOKEN=github_pat_...
 AUTH_SECRET="generated-base64-secret"
 AUTH_URL="http://localhost:5173"
 
-# GitHub OAuth App (For Local Dev: Callback URL = http://localhost:5173/auth/callback/github)
+# GitHub OAuth App (For Local Dev: Callback URL = http://localhost:5173/auth/callback/github
+# Production callback URL: https://agent-ci-dashboard.vercel.app/auth/callback/github)
 GITHUB_CLIENT_ID="..."
 GITHUB_CLIENT_SECRET="..."
 
