@@ -157,6 +157,25 @@
 				  <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
 				</span>
 				<span>Live Updates • Last sync: {lastUpdated.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+				<div class="w-px h-4 bg-border-light dark:bg-border-dark mx-1"></div>
+				<button 
+					class="text-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors p-1 rounded-full hover:bg-indigo-500/10"
+					onclick={async () => {
+						try {
+							const res = await fetch('/api/status');
+							const json = await res.json();
+							if (json.success) {
+								statuses = json.data;
+								lastUpdated = new Date();
+							}
+						} catch (e) {
+							console.error('Failed to poll status', e);
+						}
+					}}
+					title="Refresh Now"
+				>
+					<RefreshCw size={14} />
+				</button>
 			</div>
 		</div>
 	</header>
