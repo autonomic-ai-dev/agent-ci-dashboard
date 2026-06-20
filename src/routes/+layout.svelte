@@ -56,9 +56,9 @@
 
 	<!-- Global Background effects for Glassmorphism -->
 	<div class="fixed inset-0 z-0 pointer-events-none">
-		<div class="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/20 rounded-full mix-blend-multiply filter blur-[100px] opacity-60 animate-pulse"></div>
-		<div class="absolute top-1/3 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full mix-blend-multiply filter blur-[100px] opacity-60 animate-pulse" style="animation-delay: 2s"></div>
-		<div class="absolute bottom-1/4 left-1/3 w-96 h-96 bg-pink-500/20 rounded-full mix-blend-multiply filter blur-[100px] opacity-60 animate-pulse" style="animation-delay: 4s"></div>
+		<div class="absolute top-1/4 left-1/4 w-[30rem] h-[30rem] bg-indigo-500/30 dark:bg-indigo-500/20 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[120px] opacity-70 animate-pulse"></div>
+		<div class="absolute top-1/3 right-1/4 w-[30rem] h-[30rem] bg-purple-500/30 dark:bg-purple-500/20 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[120px] opacity-70 animate-pulse" style="animation-delay: 2s"></div>
+		<div class="absolute bottom-1/4 left-1/3 w-[30rem] h-[30rem] bg-pink-500/30 dark:bg-pink-500/20 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[120px] opacity-70 animate-pulse" style="animation-delay: 4s"></div>
 	</div>
 
 	{#if data.session}
