@@ -162,7 +162,7 @@
 					class="text-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors p-1 rounded-full hover:bg-indigo-500/10"
 					onclick={async () => {
 						try {
-							const res = await fetch('/api/status');
+							const res = await fetch(`/api/status?t=${Date.now()}`, { cache: 'no-store' });
 							const json = await res.json();
 							if (json.success) {
 								statuses = json.data;
