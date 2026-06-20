@@ -79,7 +79,7 @@ export async function GET(event) {
 													avatarUrl
 												}
 											}
-											checkSuites(first: 10) {
+											checkSuites(first: 100) {
 												nodes {
 													status
 													conclusion

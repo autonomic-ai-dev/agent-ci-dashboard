@@ -5,7 +5,8 @@
 	let { data } = $props();
 	
 	// Local state for polling and filtering
-	let statuses = $state(data.statuses);
+	let initialStatuses = data.statuses;
+	let statuses = $state(initialStatuses);
 	let lastUpdated = $state(new Date());
 	let searchQuery = $state('');
 	let activeFilter = $state('all'); // all, failure, pending, success
@@ -93,7 +94,7 @@
 	<header class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
 		<div>
 			<div class="flex items-center gap-3 mb-3">
-				<div class="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+				<div class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-orange-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
 					<Activity class="text-white" size={20} />
 				</div>
 				<h1 class="text-3xl font-bold text-text-primary-light dark:text-text-primary-dark tracking-tight">
@@ -106,7 +107,7 @@
 		<div class="flex items-center gap-3">
 			{#if typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window}
 				<button 
-					class="px-4 py-2 rounded-full text-sm font-medium bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 hover:bg-indigo-500/20 transition-all shadow-sm flex items-center gap-2"
+					class="px-4 py-2 rounded-full text-sm font-medium bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/20 transition-all shadow-sm flex items-center gap-2"
 					onclick={async () => {
 						try {
 							const result = await Notification.requestPermission();
@@ -154,13 +155,13 @@
 
 			<div class="flex items-center gap-3 text-sm text-text-secondary-light dark:text-text-secondary-dark font-medium px-4 py-2 bg-surface-light dark:bg-surface-dark rounded-full border border-border-light dark:border-border-dark shadow-sm">
 				<span class="relative flex h-2 w-2">
-				  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-				  <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+				  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+				  <span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
 				</span>
-				<span>Live Updates • Last sync: {lastUpdated.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+				<span>Live Updates • Last sync: {lastUpdated.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false})}</span>
 				<div class="w-px h-4 bg-border-light dark:bg-border-dark mx-1"></div>
 				<button 
-					class="text-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors p-1 rounded-full hover:bg-indigo-500/10"
+					class="text-cyan-500 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors p-1 rounded-full hover:bg-cyan-500/10"
 					onclick={async () => {
 						try {
 							const res = await fetch(`/api/status?t=${Date.now()}`, { cache: 'no-store' });
@@ -196,7 +197,7 @@
 				type="text" 
 				bind:value={searchQuery} 
 				placeholder="Search repositories..." 
-				class="w-full bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-xl py-2.5 pl-10 pr-4 text-sm text-text-primary-light dark:text-text-primary-dark focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all shadow-sm"
+				class="w-full bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-xl py-2.5 pl-10 pr-4 text-sm text-text-primary-light dark:text-text-primary-dark focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all shadow-sm"
 			/>
 		</div>
 		
@@ -204,7 +205,7 @@
 			{#each ['all', 'failure', 'pending', 'success'] as filter}
 				<button 
 					onclick={() => activeFilter = filter}
-					class={`px-4 py-2 rounded-xl text-sm font-medium capitalize transition-all border whitespace-nowrap ${activeFilter === filter ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30' : 'bg-surface-light dark:bg-surface-dark text-text-secondary-light dark:text-text-secondary-dark border-border-light dark:border-border-dark hover:border-border-light-hover dark:hover:border-border-dark-hover'}`}
+					class={`px-4 py-2 rounded-xl text-sm font-medium capitalize transition-all border whitespace-nowrap ${activeFilter === filter ? 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30' : 'bg-surface-light dark:bg-surface-dark text-text-secondary-light dark:text-text-secondary-dark border-border-light dark:border-border-dark hover:border-border-light-hover dark:hover:border-border-dark-hover'}`}
 				>
 					{filter}
 				</button>
@@ -215,23 +216,24 @@
 	<!-- Grid -->
 	<div class="flex flex-col gap-6">
 		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-			{#each filteredStatuses as item}
+			{#each filteredStatuses as item, i}
 				{@const StatusIcon = getStatusIcon(item.status)}
 				<a 
 					href={`/repo/${item.repo}`} 
-					class="group relative glass-card rounded-2xl p-5 flex flex-col overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 dark:hover:shadow-indigo-500/20 hover:-translate-y-1"
+					class="group relative glass-card rounded-2xl p-5 flex flex-col overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/10 dark:hover:shadow-cyan-500/20 hover:-translate-y-1 animate-fade-in-up"
+					style="animation-delay: {i * 50}ms;"
 				>
 					<!-- Header -->
 					<div class="flex items-start justify-between mb-4 z-10 relative">
 						<div class="flex flex-col">
-							<h2 class="text-lg font-bold text-text-primary-light dark:text-text-primary-dark mb-1 group-hover:text-indigo-500 transition-colors">
+							<h2 class="text-lg font-bold text-text-primary-light dark:text-text-primary-dark mb-1 group-hover:text-cyan-500 transition-colors">
 								{item.repo}
 							</h2>
 							
 							<!-- Metadata Inline -->
 							<div class="flex items-center gap-2 text-[13px] text-text-secondary-light dark:text-text-secondary-dark font-medium">
 								{#if item.tag}
-									<span class="font-mono bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-border-light dark:border-border-dark group-hover:border-indigo-500/30 transition-colors">{item.tag}</span>
+									<span class="font-mono bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-border-light dark:border-border-dark group-hover:border-cyan-500/30 transition-colors">{item.tag}</span>
 								{/if}
 								{#if item.sha}
 									<span class="font-mono opacity-60">{item.sha.substring(0, 7)}</span>
@@ -289,7 +291,7 @@
 							<Clock size={12} class="opacity-70" />
 							<span>
 								{#if item.updatedAt}
-									{new Date(item.updatedAt).toLocaleDateString(undefined, {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'})}
+									{new Date(item.updatedAt).toLocaleDateString(undefined, {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false})}
 								{:else}
 									Unknown
 								{/if}

@@ -173,11 +173,11 @@
 	
 	<!-- Header Navigation -->
 	<nav class="mb-10 flex items-center justify-between">
-		<a href="/" class="flex items-center gap-2 text-text-secondary-light dark:text-text-secondary-dark hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors font-medium">
+		<a href="/" class="flex items-center gap-2 text-text-secondary-light dark:text-text-secondary-dark hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors font-medium">
 			<ArrowLeft size={20} />
 			<span>Back to Dashboard</span>
 		</a>
-		<a href={data.repoUrl} target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 px-4 py-2 rounded-full bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark text-text-primary-light dark:text-text-primary-dark hover:border-indigo-500/50 hover:shadow-lg transition-all font-medium text-sm">
+		<a href={data.repoUrl} target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 px-4 py-2 rounded-full bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark text-text-primary-light dark:text-text-primary-dark hover:border-cyan-500/50 hover:shadow-lg transition-all font-medium text-sm">
 			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
 			<span>View on GitHub</span>
 		</a>
@@ -216,21 +216,21 @@
 	<div class="flex gap-2 mb-8 border-b border-border-light dark:border-border-dark overflow-x-auto pb-1">
 		<button 
 			onclick={() => activeTab = 'readme'}
-			class={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-medium transition-colors whitespace-nowrap ${activeTab === 'readme' ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400 bg-black/5 dark:bg-white/5' : 'text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark hover:bg-black/5 dark:hover:bg-white/5'}`}
+			class={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-medium transition-colors whitespace-nowrap ${activeTab === 'readme' ? 'text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-600 dark:border-cyan-400 bg-black/5 dark:bg-white/5' : 'text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark hover:bg-black/5 dark:hover:bg-white/5'}`}
 		>
 			<FileText size={18} />
 			<span>README.md</span>
 		</button>
 		<button 
 			onclick={() => activeTab = 'releases'}
-			class={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-medium transition-colors whitespace-nowrap ${activeTab === 'releases' ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400 bg-black/5 dark:bg-white/5' : 'text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark hover:bg-black/5 dark:hover:bg-white/5'}`}
+			class={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-medium transition-colors whitespace-nowrap ${activeTab === 'releases' ? 'text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-600 dark:border-cyan-400 bg-black/5 dark:bg-white/5' : 'text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark hover:bg-black/5 dark:hover:bg-white/5'}`}
 		>
 			<Tag size={18} />
 			<span>Release History</span>
 		</button>
 		<button 
 			onclick={() => activeTab = 'runs'}
-			class={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-medium transition-colors whitespace-nowrap ${activeTab === 'runs' ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400 bg-black/5 dark:bg-white/5' : 'text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark hover:bg-black/5 dark:hover:bg-white/5'}`}
+			class={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-medium transition-colors whitespace-nowrap ${activeTab === 'runs' ? 'text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-600 dark:border-cyan-400 bg-black/5 dark:bg-white/5' : 'text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark hover:bg-black/5 dark:hover:bg-white/5'}`}
 		>
 			<Activity size={18} />
 			<span>CI History</span>
@@ -243,7 +243,7 @@
 			<!-- README Section -->
 			<section class="glass-card rounded-2xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
 				<div class="p-6 md:p-8 overflow-x-auto">
-					<article class="prose prose-slate dark:prose-invert max-w-none prose-headings:font-semibold prose-a:text-indigo-600 dark:prose-a:text-indigo-400 prose-pre:bg-base-light dark:prose-pre:bg-base-dark prose-pre:border prose-pre:border-border-light dark:prose-pre:border-border-dark">
+					<article class="prose prose-slate dark:prose-invert max-w-none prose-headings:font-semibold prose-a:text-cyan-600 dark:prose-a:text-cyan-400 prose-pre:bg-base-light dark:prose-pre:bg-base-dark prose-pre:border prose-pre:border-border-light dark:prose-pre:border-border-dark">
 						{@html data.readmeHtml}
 					</article>
 				</div>
@@ -255,14 +255,14 @@
 				{#if releases && releases.length > 0}
 					<div class="flex flex-col gap-6">
 						{#each releases as release}
-							<a href={release.url} target="_blank" rel="noopener noreferrer" class="group block glass-card rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all hover:shadow-indigo-500/10">
+							<a href={release.url} target="_blank" rel="noopener noreferrer" class="group block glass-card rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all hover:shadow-cyan-500/10">
 								<div class="bg-black/5 dark:bg-white/5 border-b border-border-light dark:border-border-dark px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
 									<div class="flex flex-col gap-1">
-										<h3 class="text-lg font-bold text-text-primary-light dark:text-text-primary-dark group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+										<h3 class="text-lg font-bold text-text-primary-light dark:text-text-primary-dark group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
 											{release.name}
 										</h3>
 										<div class="flex items-center gap-2 text-sm text-text-secondary-light dark:text-text-secondary-dark">
-											<span class="font-mono bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-border-light dark:border-border-dark group-hover:border-indigo-500/30 transition-colors">{release.tag}</span>
+											<span class="font-mono bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-border-light dark:border-border-dark group-hover:border-cyan-500/30 transition-colors">{release.tag}</span>
 											<span class="flex items-center gap-1"><Clock size={14} /> {formatDate(release.publishedAt)}</span>
 										</div>
 									</div>
@@ -276,7 +276,7 @@
 								</div>
 								
 								<div class="p-6 overflow-x-auto pointer-events-none">
-									<article class="prose prose-slate dark:prose-invert max-w-none prose-sm prose-headings:font-semibold prose-a:text-indigo-600 dark:prose-a:text-indigo-400 prose-pre:bg-base-light dark:prose-pre:bg-base-dark prose-pre:border prose-pre:border-border-light dark:prose-pre:border-border-dark">
+									<article class="prose prose-slate dark:prose-invert max-w-none prose-sm prose-headings:font-semibold prose-a:text-cyan-600 dark:prose-a:text-cyan-400 prose-pre:bg-base-light dark:prose-pre:bg-base-dark prose-pre:border prose-pre:border-border-light dark:prose-pre:border-border-dark">
 										{@html release.descriptionHtml}
 									</article>
 								</div>
@@ -287,7 +287,7 @@
 					<!-- Intersection Observer Target -->
 					{#if releasesPageInfo.hasNextPage}
 						<div bind:this={observerTarget} class="h-20 flex items-center justify-center mt-6">
-							<Loader2 class="w-6 h-6 animate-spin text-indigo-500" />
+							<Loader2 class="w-6 h-6 animate-spin text-cyan-500" />
 						</div>
 					{/if}
 				{:else}
@@ -312,13 +312,13 @@
 										<h3 class="text-[15px] font-medium text-text-primary-light dark:text-text-primary-dark max-w-2xl truncate" title={commit.message}>{commit.message}</h3>
 										<div class="flex items-center gap-3 text-[13px] text-text-secondary-light dark:text-text-secondary-dark">
 											{#if commit.author}
-												<a href={`https://github.com/${commit.author.login}`} target="_blank" rel="noopener noreferrer" class="flex items-center gap-1.5 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+												<a href={`https://github.com/${commit.author.login}`} target="_blank" rel="noopener noreferrer" class="flex items-center gap-1.5 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">
 													<img src={commit.author.avatarUrl} alt={commit.author.login} class="w-4 h-4 rounded-full" />
 													<span>{commit.author.login}</span>
 												</a>
 											{/if}
 											<div class="flex items-center gap-1.5">
-												<a href={`${data.repoUrl}/commit/${commit.sha}`} target="_blank" rel="noopener noreferrer" class="font-mono bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-border-light dark:border-border-dark text-[11px] hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-500/30 transition-colors">
+												<a href={`${data.repoUrl}/commit/${commit.sha}`} target="_blank" rel="noopener noreferrer" class="font-mono bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-border-light dark:border-border-dark text-[11px] hover:text-cyan-600 dark:hover:text-cyan-400 hover:border-cyan-500/30 transition-colors">
 													{commit.sha.substring(0, 7)}
 												</a>
 											</div>
@@ -340,7 +340,7 @@
 									<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-3 border-t border-border-light/50 dark:border-border-dark/50">
 										{#each commit.runs as run}
 											{@const WfIcon = getStatusIcon(run.status)}
-											<div class="group flex items-center justify-between text-[13px] bg-black/5 dark:bg-white/5 border border-border-light/50 dark:border-border-dark/50 px-3 py-2 rounded-lg hover:border-indigo-500/30 transition-colors">
+											<div class="group flex items-center justify-between text-[13px] bg-black/5 dark:bg-white/5 border border-border-light/50 dark:border-border-dark/50 px-3 py-2 rounded-lg hover:border-cyan-500/30 transition-colors">
 												<button 
 													disabled={run.status === 'queued' || run.status === 'in_progress' || run.status === 'pending'}
 													onclick={(e) => { e.preventDefault(); if (run.id) viewLogs(run.id, run.name, run.status); }} 
@@ -348,10 +348,10 @@
 													title={run.status === 'queued' || run.status === 'in_progress' || run.status === 'pending' ? 'Logs will be available when the run completes' : run.name}
 												>
 													<WfIcon size={14} class={run.status === 'success' ? 'text-green-500 dark:text-green-400' : run.status === 'failure' || run.status === 'timed_out' ? 'text-red-500 dark:text-red-400' : 'text-yellow-500 dark:text-yellow-400'} />
-													<span class="text-text-primary-light dark:text-text-primary-dark truncate transition-colors group-[&:not(:disabled)]/btn:group-hover:text-indigo-600 group-[&:not(:disabled)]/btn:dark:group-hover:text-indigo-400">{run.name}</span>
+													<span class="text-text-primary-light dark:text-text-primary-dark truncate transition-colors group-[&:not(:disabled)]/btn:group-hover:text-cyan-600 group-[&:not(:disabled)]/btn:dark:group-hover:text-cyan-400">{run.name}</span>
 												</button>
 												
-												<a href={run.url || '#'} target={run.url ? '_blank' : undefined} rel="noopener noreferrer" class="opacity-0 group-hover:opacity-100 p-1.5 ml-2 text-text-secondary-light hover:text-indigo-600 dark:text-text-secondary-dark dark:hover:text-indigo-400 bg-white dark:bg-black rounded border border-border-light dark:border-border-dark shadow-sm transition-all" title="View on GitHub">
+												<a href={run.url || '#'} target={run.url ? '_blank' : undefined} rel="noopener noreferrer" class="opacity-0 group-hover:opacity-100 p-1.5 ml-2 text-text-secondary-light hover:text-cyan-600 dark:text-text-secondary-dark dark:hover:text-cyan-400 bg-white dark:bg-black rounded border border-border-light dark:border-border-dark shadow-sm transition-all" title="View on GitHub">
 													<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
 												</a>
 											</div>
@@ -365,7 +365,7 @@
 					<!-- Intersection Observer Target -->
 					{#if commitsPageInfo.hasNextPage}
 						<div bind:this={observerTarget} class="h-20 flex items-center justify-center mt-6">
-							<Loader2 class="w-6 h-6 animate-spin text-indigo-500" />
+							<Loader2 class="w-6 h-6 animate-spin text-cyan-500" />
 						</div>
 					{/if}
 				{:else}
@@ -409,7 +409,7 @@
 			<div class="flex-1 p-4 overflow-y-auto bg-[#0D1117] text-green-400 font-mono text-[13px] leading-relaxed custom-scrollbar">
 				{#if terminalLoading}
 					<div class="flex flex-col items-center justify-center h-full gap-3 text-gray-500">
-						<Loader2 class="w-8 h-8 animate-spin text-indigo-500" />
+						<Loader2 class="w-8 h-8 animate-spin text-cyan-500" />
 						<p class="font-sans text-sm">Fetching remote logs from GitHub Actions...</p>
 					</div>
 				{:else}

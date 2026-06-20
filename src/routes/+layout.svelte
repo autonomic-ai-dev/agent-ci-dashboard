@@ -1,30 +1,9 @@
 <script lang="ts">
 	import '../app.css';
-	import { LogOut, Sun, Moon, Monitor } from '@lucide/svelte';
-	import { onMount } from 'svelte';
+	import { LogOut } from '@lucide/svelte';
 	import { signIn, signOut } from '@auth/sveltekit/client';
 
 	let { children, data } = $props();
-	
-	let theme = $state('system');
-
-	onMount(() => {
-		const stored = localStorage.getItem('theme');
-		if (stored) {
-			theme = stored;
-		}
-		applyTheme(theme);
-	});
-
-	function applyTheme(newTheme: string) {
-		theme = newTheme;
-		localStorage.setItem('theme', newTheme);
-		if (newTheme === 'dark' || (newTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-			document.documentElement.classList.add('dark');
-		} else {
-			document.documentElement.classList.remove('dark');
-		}
-	}
 </script>
 
 <div class="min-h-screen text-text-primary-light dark:text-text-primary-dark transition-colors duration-300">
@@ -39,25 +18,11 @@
 				</button>
 			</div>
 		{/if}
-		
-		<!-- Theme Toggle Inline -->
-		<div class="relative group bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-full p-1 shadow-sm flex items-center gap-1 overflow-hidden transition-all duration-300 w-[36px] hover:w-[104px]">
-			<button aria-label="System theme" onclick={() => applyTheme('system')} class={`p-1.5 rounded-full transition-colors ${theme === 'system' ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' : 'text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark'}`} title="System">
-				<Monitor size={16} />
-			</button>
-			<button aria-label="Light theme" onclick={() => applyTheme('light')} class={`p-1.5 rounded-full transition-colors ${theme === 'light' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark'}`} title="Light">
-				<Sun size={16} />
-			</button>
-			<button aria-label="Dark theme" onclick={() => applyTheme('dark')} class={`p-1.5 rounded-full transition-colors ${theme === 'dark' ? 'bg-indigo-500/10 text-indigo-400 dark:text-indigo-300' : 'text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark'}`} title="Dark">
-				<Moon size={16} />
-			</button>
-		</div>
 	</div>
-
 	<!-- Global Background effects for Glassmorphism -->
 	<div class="fixed inset-0 z-0 pointer-events-none">
-		<div class="absolute top-1/4 left-1/4 w-[30rem] h-[30rem] bg-indigo-500/30 dark:bg-indigo-500/20 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[120px] opacity-70 animate-pulse"></div>
-		<div class="absolute top-1/3 right-1/4 w-[30rem] h-[30rem] bg-purple-500/30 dark:bg-purple-500/20 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[120px] opacity-70 animate-pulse" style="animation-delay: 2s"></div>
+		<div class="absolute top-1/4 left-1/4 w-[30rem] h-[30rem] bg-cyan-500/30 dark:bg-cyan-500/20 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[120px] opacity-70 animate-pulse"></div>
+		<div class="absolute top-1/3 right-1/4 w-[30rem] h-[30rem] bg-orange-500/30 dark:bg-orange-500/20 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[120px] opacity-70 animate-pulse" style="animation-delay: 2s"></div>
 		<div class="absolute bottom-1/4 left-1/3 w-[30rem] h-[30rem] bg-pink-500/30 dark:bg-pink-500/20 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[120px] opacity-70 animate-pulse" style="animation-delay: 4s"></div>
 	</div>
 
@@ -69,7 +34,7 @@
 		<div class="flex flex-col items-center justify-center min-h-screen p-6 relative overflow-hidden z-10">
 
 			<div class="bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-3xl p-10 max-w-md w-full shadow-2xl relative z-10 flex flex-col items-center text-center">
-				<div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 mb-6">
+				<div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-orange-600 flex items-center justify-center shadow-lg shadow-cyan-500/30 mb-6">
 					<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
 				</div>
 				

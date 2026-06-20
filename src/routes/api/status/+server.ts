@@ -47,7 +47,7 @@ export async function GET(event) {
 						url
 					}
 				}
-				checkSuites(first: 10) {
+				checkSuites(first: 100) {
 					nodes {
 						status
 						conclusion
