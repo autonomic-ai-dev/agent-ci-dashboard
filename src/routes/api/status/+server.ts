@@ -118,11 +118,10 @@ export async function GET(event) {
 				updatedAt: run.updatedAt
 			}));
 
-			// Derive an aggregate status based on workflows
 			let aggregateStatus = 'success';
 			if (workflows.length === 0) {
 				aggregateStatus = 'no-runs';
-			} else if (workflows.some((w: any) => w.status === 'failure' || w.status === 'timed_out')) {
+			} else if (workflows.some((w: any) => w.status === 'failure' || w.status === 'timed_out' || w.status === 'cancelled' || w.status === 'action_required')) {
 				aggregateStatus = 'failure';
 			} else if (workflows.some((w: any) => w.status === 'in_progress' || w.status === 'queued' || w.status === 'pending')) {
 				aggregateStatus = 'pending';
