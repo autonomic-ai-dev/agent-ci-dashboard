@@ -11,7 +11,7 @@ renderer.code = ({ text, lang }) => {
 	return `<pre class="not-prose"><code class="not-prose${langClass}">${text}</code></pre>`;
 };
 renderer.codespan = ({ text }) => {
-	return `<code class="inline-code">${text}</code>`;
+	return `<span class="not-prose"><code class="inline-code">${text}</code></span>`;
 };
 marked.setOptions({ renderer });
 
@@ -137,7 +137,6 @@ export async function load(event) {
 		let readmeHtml = '<p>No README found.</p>';
 		if (repoData.readme && repoData.readme.text) {
 			const rawHtml = await marked.parse(repoData.readme.text);
-			console.log(rawHtml);
 			readmeHtml = sanitizeHtml(rawHtml, {
 				allowedTags: [
 					...sanitizeHtml.defaults.allowedTags,

@@ -153,9 +153,10 @@
 
 	$effect(() => {
 		if (activeTab === 'readme') {
-			requestAnimationFrame(() => {
-				mermaid.run({ querySelector: '.language-mermaid' });
-			});
+			const id = setTimeout(() => {
+				mermaid.run({ querySelector: '.language-mermaid' }).catch(console.error);
+			}, 200);
+			return () => clearTimeout(id);
 		}
 	});
 
