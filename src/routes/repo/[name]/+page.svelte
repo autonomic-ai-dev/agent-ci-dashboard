@@ -151,14 +151,40 @@
 		}
 	});
 
+	async function copyCode(btn: HTMLButtonElement) {
+		const pre = btn.closest('.code-block')?.querySelector('pre code');
+		if (!pre) return;
+		const text = pre.textContent || '';
+		try {
+			await navigator.clipboard.writeText(text);
+			const label = btn.querySelector('.copy-label');
+			if (label) {
+				label.textContent = 'Copied!';
+				setTimeout(() => {
+					label.textContent = 'Copy';
+				}, 2000);
+			}
+		} catch {
+			/* ignore */
+		}
+	}
+
 	$effect(() => {
 		if (activeTab === 'readme') {
 			const id = setTimeout(() => {
+				document.querySelectorAll('.copy-btn').forEach((btn) => {
+					btn.removeEventListener('click', copyClick);
+					btn.addEventListener('click', copyClick);
+				});
 				mermaid.run({ querySelector: '.language-mermaid' }).catch(console.error);
 			}, 200);
 			return () => clearTimeout(id);
 		}
 	});
+
+	function copyClick(e: Event) {
+		copyCode(e.currentTarget as HTMLButtonElement);
+	}
 
 	onMount(() => {
 		const observer = new IntersectionObserver(
@@ -357,7 +383,7 @@
 			>
 				<div class="p-6 md:p-8 overflow-x-auto">
 					<article
-						class="prose prose-slate dark:prose-invert max-w-none prose-headings:font-semibold prose-a:text-cyan-600 dark:prose-a:text-cyan-400 prose-pre:bg-base-light dark:prose-pre:bg-base-dark prose-pre:border prose-pre:border-border-light dark:prose-pre:border-border-dark"
+						class="prose prose-slate dark:prose-invert max-w-none prose-headings:font-semibold prose-a:text-cyan-600 dark:prose-a:text-cyan-400"
 					>
 						{@html data.readmeHtml}
 					</article>
@@ -674,5 +700,72 @@
 	:global(.language-mermaid) {
 		background: transparent !important;
 		padding: 0 !important;
+	}
+
+	:global(.code-block) {
+		margin: 1.25em 0;
+		border: 1px solid #334155;
+		border-radius: 0.75rem;
+		overflow: hidden;
+		background: #0b1120;
+	}
+
+	:global(.code-block-header) {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.375rem 0.75rem;
+		background: #1e293b;
+		border-bottom: 1px solid #334155;
+		font-size: 0.75rem;
+	}
+
+	:global(.code-lang-label) {
+		color: #94a3b8;
+		font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	:global(.copy-btn) {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.375rem;
+		padding: 0.25rem 0.5rem;
+		border: 1px solid #475569;
+		border-radius: 0.375rem;
+		background: #334155;
+		color: #94a3b8;
+		font-size: 0.6875rem;
+		cursor: pointer;
+		transition: all 0.15s;
+	}
+
+	:global(.copy-btn:hover) {
+		background: #475569;
+		color: #e2e8f0;
+		border-color: #64748b;
+	}
+
+	:global(.code-block pre) {
+		margin: 0 !important;
+		border: none !important;
+		border-radius: 0 !important;
+		background: transparent !important;
+		padding: 1rem !important;
+		font-size: 0.8125rem !important;
+		line-height: 1.5 !important;
+	}
+
+	:global(.code-block pre code) {
+		background: transparent !important;
+		padding: 0 !important;
+		font-size: inherit !important;
+	}
+
+	:global(.dark .code-block) {
+		background: #0b1120;
+		border-color: #1e293b;
 	}
 </style>

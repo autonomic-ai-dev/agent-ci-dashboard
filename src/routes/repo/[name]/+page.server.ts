@@ -4,11 +4,23 @@ import { Octokit } from 'octokit';
 import { marked, Renderer } from 'marked';
 import sanitizeHtml from 'sanitize-html';
 
-// Custom renderer: wrap code blocks with not-prose to avoid Tailwind Typography backtick pseudo-elements
+// Custom renderer: wrap code blocks with header toolbar and copy button
 const renderer = new Renderer();
 renderer.code = ({ text, lang }) => {
+	if (lang === 'mermaid') {
+		return `<pre class="not-prose"><code class="not-prose language-mermaid">${text}</code></pre>`;
+	}
+	const langLabel = lang ? `<span class="code-lang-label">${lang}</span>` : '';
 	const langClass = lang ? ` language-${lang}` : '';
-	return `<pre class="not-prose"><code class="not-prose${langClass}">${text}</code></pre>`;
+	const copySvg =
+		'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+	return `<figure class="code-block">
+	<figcaption class="code-block-header">
+		${langLabel}
+		<button type="button" class="copy-btn" title="Copy code">${copySvg}<span class="copy-label">Copy</span></button>
+	</figcaption>
+	<pre class="not-prose"><code class="not-prose${langClass}">${text}</code></pre>
+</figure>`;
 };
 renderer.codespan = ({ text }) => {
 	return `<span class="not-prose"><code class="inline-code">${text}</code></span>`;
@@ -156,14 +168,32 @@ export async function load(event) {
 					'td',
 					'pre',
 					'code',
-					'hr'
+					'hr',
+					'figure',
+					'figcaption',
+					'button',
+					'svg',
+					'path'
 				],
 				allowedAttributes: {
 					'*': ['class', 'id'],
 					a: ['href', 'name', 'target'],
 					code: ['class'],
 					pre: ['class'],
-					img: ['src', 'alt', 'title', 'width', 'height']
+					img: ['src', 'alt', 'title', 'width', 'height'],
+					button: ['type', 'title'],
+					svg: [
+						'xmlns',
+						'width',
+						'height',
+						'viewBox',
+						'fill',
+						'stroke',
+						'stroke-width',
+						'stroke-linecap',
+						'stroke-linejoin'
+					],
+					path: ['d']
 				}
 			});
 		}
