@@ -1,6 +1,6 @@
 <script lang="ts">
 	import '../app.css';
-	import { LogOut } from '@lucide/svelte';
+	import { LogOut, Activity } from '@lucide/svelte';
 	import { signIn, signOut } from '@auth/sveltekit/client';
 
 	let { children, data } = $props();
@@ -9,27 +9,6 @@
 <div
 	class="min-h-screen text-text-primary-light dark:text-text-primary-dark transition-colors duration-300"
 >
-	<div class="fixed top-6 right-6 z-50 flex items-center gap-3">
-		{#if data.session}
-			<div
-				class="flex items-center gap-2 px-3 py-1.5 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-full shadow-sm"
-			>
-				<img src={data.session.user?.image} alt="User" class="w-6 h-6 rounded-full" />
-				<span class="text-sm font-medium pr-2"
-					>{data.session.user?.name || data.session.user?.email}</span
-				>
-				<div class="w-px h-4 bg-border-light dark:bg-border-dark"></div>
-				<button
-					type="button"
-					onclick={() => signOut({ callbackUrl: '/' })}
-					class="text-text-secondary-light hover:text-red-500 dark:text-text-secondary-dark transition-colors pl-1"
-					title="Sign Out"
-				>
-					<LogOut size={16} />
-				</button>
-			</div>
-		{/if}
-	</div>
 	<!-- Global Background effects for Glassmorphism -->
 	<div class="fixed inset-0 z-0 pointer-events-none">
 		<div
@@ -46,6 +25,41 @@
 	</div>
 
 	{#if data.session}
+		<!-- Top bar with user info -->
+		<header
+			class="sticky top-0 z-50 flex items-center justify-between px-4 sm:px-6 py-2 bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-lg border-b border-border-light dark:border-border-dark"
+		>
+			<a
+				href="/"
+				class="flex items-center gap-2 text-text-secondary-light dark:text-text-secondary-dark hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
+			>
+				<div
+					class="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-500 to-orange-600 flex items-center justify-center shadow-sm"
+				>
+					<Activity class="text-white" size={16} />
+				</div>
+				<span class="text-sm font-semibold tracking-tight hidden sm:inline">Agent CI</span>
+			</a>
+
+			<div
+				class="flex items-center gap-2 px-3 py-1 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-full shadow-sm"
+			>
+				<img src={data.session.user?.image} alt="User" class="w-6 h-6 rounded-full shrink-0" />
+				<span class="text-sm font-medium truncate max-w-[120px] sm:max-w-[200px]"
+					>{data.session.user?.name || data.session.user?.email}</span
+				>
+				<div class="w-px h-4 bg-border-light dark:bg-border-dark mx-1"></div>
+				<button
+					type="button"
+					onclick={() => signOut({ callbackUrl: '/' })}
+					class="text-text-secondary-light hover:text-red-500 dark:text-text-secondary-dark transition-colors p-1"
+					title="Sign Out"
+				>
+					<LogOut size={14} />
+				</button>
+			</div>
+		</header>
+
 		<main class="w-full relative z-10">
 			{@render children()}
 		</main>
