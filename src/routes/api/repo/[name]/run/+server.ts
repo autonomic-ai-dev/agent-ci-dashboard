@@ -45,6 +45,9 @@ export async function POST(event) {
 		return json({ success: true });
 	} catch (e) {
 		console.error(`Failed to rerun workflow for ${repo}:`, e);
-		return json({ success: false, error: 'Failed to rerun workflow. Ensure no other jobs are pending.' }, { status: 500 });
+		return json(
+			{ success: false, error: 'Failed to rerun workflow. Ensure no other jobs are pending.' },
+			{ status: 500 }
+		);
 	}
 }

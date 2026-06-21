@@ -4,11 +4,7 @@ import { env } from '$env/dynamic/private';
 
 function authEnv() {
 	return {
-		secret:
-			env.AUTH_SECRET ??
-			process.env.AUTH_SECRET ??
-			process.env.AUTH_SECRET_1 ??
-			'',
+		secret: env.AUTH_SECRET ?? process.env.AUTH_SECRET ?? process.env.AUTH_SECRET_1 ?? '',
 		clientId:
 			env.GITHUB_CLIENT_ID ??
 			process.env.GITHUB_CLIENT_ID ??
@@ -40,7 +36,13 @@ export const { handle, signIn, signOut } = SvelteKitAuth(() => {
 			})
 		],
 		callbacks: {
-			async jwt({ token, account }: { token: Record<string, unknown>; account?: { access_token?: string } }) {
+			async jwt({
+				token,
+				account
+			}: {
+				token: Record<string, unknown>;
+				account?: { access_token?: string };
+			}) {
 				if (account) {
 					token.accessToken = account.access_token;
 				}

@@ -51,6 +51,7 @@ cp .env.example .env
 See [`.env.example`](.env.example) for a description of every required variable.
 
 **Key steps:**
+
 - **`GITHUB_TOKEN`** — Create a Personal Access Token with `repo` and `workflow` scopes at [github.com/settings/tokens](https://github.com/settings/tokens).
 - **`AUTH_SECRET`** — Generate with `openssl rand -base64 32`.
 - **`AUTH_URL`** — Set to `http://localhost:5173` for local dev.
@@ -101,22 +102,22 @@ Mirror all variables from `.env.example` in Vercel's **Settings → Environment 
 
 Add the following secrets to your repository under **Settings → Secrets and variables → Actions**:
 
-| Secret | Description |
-|---|---|
-| `VERCEL_ORG_ID` | Your Vercel organization ID |
-| `VERCEL_PROJECT_ID` | Your Vercel project ID |
-| `VERCEL_TOKEN` | Your Vercel personal access token |
+| Secret              | Description                       |
+| ------------------- | --------------------------------- |
+| `VERCEL_ORG_ID`     | Your Vercel organization ID       |
+| `VERCEL_PROJECT_ID` | Your Vercel project ID            |
+| `VERCEL_TOKEN`      | Your Vercel personal access token |
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | [SvelteKit](https://kit.svelte.dev) |
-| Styling | [Tailwind CSS v4](https://tailwindcss.com) |
-| Auth | [Auth.js (SvelteKit)](https://authjs.dev) |
-| Deployment | [Vercel](https://vercel.com) |
-| Storage | [Vercel KV](https://vercel.com/storage/kv) |
-| Push | [web-push](https://github.com/web-push-libs/web-push) + Service Worker |
-| CI/CD | GitHub Actions |
+| Layer      | Technology                                                             |
+| ---------- | ---------------------------------------------------------------------- |
+| Framework  | [SvelteKit](https://kit.svelte.dev)                                    |
+| Styling    | [Tailwind CSS v4](https://tailwindcss.com)                             |
+| Auth       | [Auth.js (SvelteKit)](https://authjs.dev)                              |
+| Deployment | [Vercel](https://vercel.com)                                           |
+| Storage    | [Vercel KV](https://vercel.com/storage/kv)                             |
+| Push       | [web-push](https://github.com/web-push-libs/web-push) + Service Worker |
+| CI/CD      | GitHub Actions                                                         |

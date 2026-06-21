@@ -61,6 +61,30 @@ export async function load(event) {
 							}
 						}
 					}
+					refs(refPrefix: "refs/tags/", last: 1) {
+						nodes {
+							name
+							target {
+								... on Commit {
+									oid
+									checkSuites(first: 100) {
+										nodes {
+											status
+											conclusion
+											updatedAt
+											workflowRun {
+												databaseId
+												url
+												workflow {
+													name
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
 					defaultBranchRef {
 						target {
 							... on Commit {
@@ -113,7 +137,7 @@ export async function load(event) {
 		let readmeHtml = '<p>No README found.</p>';
 		if (repoData.readme && repoData.readme.text) {
 			const rawHtml = await marked.parse(repoData.readme.text);
-			console.log(rawHtml)
+			console.log(rawHtml);
 			readmeHtml = sanitizeHtml(rawHtml, {
 				allowedTags: [
 					...sanitizeHtml.defaults.allowedTags,
@@ -152,67 +176,109 @@ export async function load(event) {
 			descriptionHtml: node.descriptionHTML || '<p>Release has no description.</p>',
 			url: node.url,
 			publishedAt: node.publishedAt,
-			author: node.author ? {
-				login: node.author.login,
-				avatarUrl: node.author.avatarUrl,
-				url: node.author.url
-			} : null
+			author: node.author
+				? {
+						login: node.author.login,
+						avatarUrl: node.author.avatarUrl,
+						url: node.author.url
+					}
+				: null
 		}));
 		const releasesPageInfo = repoData.releases.pageInfo;
 
+		// Get tag commit CI runs for merging with latest commit
+		const tagRef = repoData?.refs?.nodes?.[0] || null;
+		const tagCommitSha = tagRef?.target?.oid || null;
+
 		// Map recent commits and their CI runs
-		const commits = repoData.defaultBranchRef?.target?.history?.nodes.map((commit: any) => {
-			const validRuns = (commit.checkSuites?.nodes || []).filter((cs: any) => cs.workflowRun !== null);
+		const commits =
+			repoData.defaultBranchRef?.target?.history?.nodes.map((commit: any, idx: number) => {
+				const validRuns = (commit.checkSuites?.nodes || []).filter(
+					(cs: any) => cs.workflowRun !== null
+				);
 
-			// Deduplicate runs by workflow name, keeping the most recent attempt
-			const sortedRuns = validRuns.sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-			const uniqueRunsMap = new Map();
-			for (const run of sortedRuns) {
-				const name = run.workflowRun?.workflow?.name || 'Workflow';
-				if (!uniqueRunsMap.has(name)) {
-					uniqueRunsMap.set(name, run);
+				// Merge tag commit check suites into the first (latest) commit if tag points to a different commit
+				if (idx === 0 && tagCommitSha && tagCommitSha !== commit.oid) {
+					const tagRuns = (tagRef?.target?.checkSuites?.nodes || []).filter(
+						(cs: any) => cs.workflowRun !== null
+					);
+					validRuns.push(...tagRuns);
 				}
-			}
-			const latestUniqueRuns = Array.from(uniqueRunsMap.values());
 
-			let overallStatus = 'unknown';
-			if (latestUniqueRuns.length === 0) {
-				overallStatus = 'no-runs';
-			} else {
-				const isPending = latestUniqueRuns.some((run: any) => run.status !== 'COMPLETED');
-				const hasFailure = latestUniqueRuns.some((run: any) => run.status === 'COMPLETED' && (run.conclusion === 'FAILURE' || run.conclusion === 'TIMED_OUT' || run.conclusion === 'CANCELLED'));
-
-				if (hasFailure) {
-					overallStatus = 'failure';
-				} else if (isPending) {
-					overallStatus = 'pending';
-				} else {
-					const allSuccess = latestUniqueRuns.every((run: any) => run.status === 'COMPLETED' && (run.conclusion === 'SUCCESS' || run.conclusion === 'SKIPPED'));
-					if (allSuccess) {
-						overallStatus = 'success';
+				// Deduplicate runs by workflow name, keeping most recent by workflowRun databaseId
+				const sortedRuns = validRuns.sort(
+					(a: any, b: any) => (b.workflowRun?.databaseId || 0) - (a.workflowRun?.databaseId || 0)
+				);
+				const uniqueRunsMap = new Map();
+				for (const run of sortedRuns) {
+					const name = run.workflowRun?.workflow?.name || 'Workflow';
+					if (!uniqueRunsMap.has(name)) {
+						uniqueRunsMap.set(name, run);
 					}
 				}
-			}
+				const latestUniqueRuns = Array.from(uniqueRunsMap.values());
 
-			return {
-				sha: commit.oid,
-				message: commit.messageHeadline,
-				date: commit.committedDate,
-				author: commit.author?.user ? {
-					login: commit.author.user.login,
-					avatarUrl: commit.author.user.avatarUrl
-				} : null,
-				status: overallStatus,
-				runs: latestUniqueRuns.map((run: any) => ({
-					id: run.workflowRun?.databaseId || null,
-					name: run.workflowRun?.workflow?.name || 'Workflow',
-					url: run.workflowRun?.url,
-					status: run.status !== 'COMPLETED' ? run.status.toLowerCase() : (run.conclusion || 'completed').toLowerCase(),
-					updatedAt: run.updatedAt
-				}))
-			};
-		}) || [];
-		const commitsPageInfo = repoData.defaultBranchRef?.target?.history?.pageInfo || { hasNextPage: false, endCursor: null };
+				let overallStatus = 'unknown';
+				if (latestUniqueRuns.length === 0) {
+					overallStatus = 'no-runs';
+				} else {
+					const isPending = latestUniqueRuns.some((run: any) => run.status !== 'COMPLETED');
+					const hasFailure = latestUniqueRuns.some(
+						(run: any) =>
+							run.status === 'COMPLETED' &&
+							(run.conclusion === 'FAILURE' ||
+								run.conclusion === 'TIMED_OUT' ||
+								run.conclusion === 'ACTION_REQUIRED')
+					);
+					const hasCancelled = latestUniqueRuns.some(
+						(run: any) => run.status === 'COMPLETED' && run.conclusion === 'CANCELLED'
+					);
+
+					if (hasFailure) {
+						overallStatus = 'failure';
+					} else if (hasCancelled) {
+						overallStatus = 'cancelled';
+					} else if (isPending) {
+						overallStatus = 'pending';
+					} else {
+						const allSuccess = latestUniqueRuns.every(
+							(run: any) =>
+								run.status === 'COMPLETED' &&
+								(run.conclusion === 'SUCCESS' || run.conclusion === 'SKIPPED')
+						);
+						if (allSuccess) {
+							overallStatus = 'success';
+						}
+					}
+				}
+
+				return {
+					sha: commit.oid,
+					message: commit.messageHeadline,
+					date: commit.committedDate,
+					author: commit.author?.user
+						? {
+								login: commit.author.user.login,
+								avatarUrl: commit.author.user.avatarUrl
+							}
+						: null,
+					status: overallStatus,
+					runs: latestUniqueRuns.map((run: any) => ({
+						id: run.workflowRun?.databaseId || null,
+						name: run.workflowRun?.workflow?.name || 'Workflow',
+						url: run.workflowRun?.url,
+						status:
+							run.status !== 'COMPLETED'
+								? run.status.toLowerCase()
+								: (run.conclusion || 'completed').toLowerCase(),
+						updatedAt: run.updatedAt
+					}))
+				};
+			}) || [];
+		const commitsPageInfo = repoData.defaultBranchRef?.target?.history?.pageInfo || {
+			hasNextPage: false,
+			endCursor: null
+		};
 
 		return {
 			repo,

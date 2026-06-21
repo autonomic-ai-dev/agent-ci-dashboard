@@ -7,7 +7,7 @@ export const load: LayoutServerLoad = async (event) => {
 	} catch (e) {
 		console.error('Auth Error in layout.server.ts:', e);
 	}
-	
+
 	return {
 		session
 	};

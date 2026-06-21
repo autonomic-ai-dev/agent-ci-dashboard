@@ -46,16 +46,18 @@ export async function GET(event) {
 		// response.data is an ArrayBuffer when successful
 		const zipBuffer = Buffer.from(response.data as ArrayBuffer);
 		const zip = new AdmZip(zipBuffer);
-		
+
 		const zipEntries = zip.getEntries();
 		let allLogs = '';
 
 		// A workflow log zip contains folders for each job, and inside are .txt files for each step
 		// We will try to concatenate them in order. For simplicity, just grab everything.
-		
+
 		// Sort entries by name to preserve step order (e.g., 1_setup.txt, 2_build.txt)
-		const textEntries = zipEntries.filter(e => e.entryName.endsWith('.txt')).sort((a, b) => a.entryName.localeCompare(b.entryName));
-		
+		const textEntries = zipEntries
+			.filter((e) => e.entryName.endsWith('.txt'))
+			.sort((a, b) => a.entryName.localeCompare(b.entryName));
+
 		if (textEntries.length === 0) {
 			return json({ success: true, logs: 'No text logs found in archive.' });
 		}
@@ -65,7 +67,7 @@ export async function GET(event) {
 			// Optional: strip timestamps from the beginning of lines to make it cleaner?
 			// GitHub log lines start with "2023-01-01T00:00:00.0000000Z "
 			const cleanContent = content.replace(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z /gm, '');
-			
+
 			allLogs += `\n--- [${entry.entryName}] ---\n\n`;
 			allLogs += cleanContent;
 		}

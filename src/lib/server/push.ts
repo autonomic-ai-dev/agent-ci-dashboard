@@ -12,7 +12,10 @@ if (publicKey && privateKey) {
 	console.warn('VAPID keys are missing from environment variables. Web Push will not work.');
 }
 
-export async function sendPushNotification(subscription: webpush.PushSubscription, payload: string) {
+export async function sendPushNotification(
+	subscription: webpush.PushSubscription,
+	payload: string
+) {
 	if (!publicKey || !privateKey) {
 		console.error('Cannot send push notification: VAPID keys missing.');
 		return false;

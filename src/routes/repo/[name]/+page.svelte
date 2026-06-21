@@ -1,8 +1,21 @@
 <script lang="ts">
-import { ArrowLeft, FileText, Tag, Clock, Activity, CheckCircle, XCircle, AlertCircle, Loader2, RefreshCw, Terminal as TerminalIcon, X } from '@lucide/svelte';
-import { onMount } from 'svelte';
-import mermaid from 'mermaid';
-	
+	import {
+		ArrowLeft,
+		FileText,
+		Tag,
+		Clock,
+		Activity,
+		CheckCircle,
+		XCircle,
+		AlertCircle,
+		Loader2,
+		RefreshCw,
+		Terminal as TerminalIcon,
+		X
+	} from '@lucide/svelte';
+	import { onMount } from 'svelte';
+	import mermaid from 'mermaid';
+
 	let { data } = $props();
 
 	type Tab = 'readme' | 'releases' | 'runs';
@@ -16,7 +29,7 @@ import mermaid from 'mermaid';
 	let commits = $state<any[]>([]);
 	let commitsPageInfo = $state<any>({ hasNextPage: false, endCursor: null });
 	let loadingCommits = $state(false);
-	
+
 	// Terminal Logs State
 	let terminalOpen = $state(false);
 	let terminalLogs = $state('');
@@ -24,7 +37,7 @@ import mermaid from 'mermaid';
 	let terminalRunId = $state('');
 	let terminalRunStatus = $state('');
 	let terminalLoading = $state(false);
-	
+
 	let rerunningIds = $state<Set<string>>(new Set());
 
 	$effect(() => {
@@ -43,7 +56,7 @@ import mermaid from 'mermaid';
 		terminalRunStatus = status;
 		terminalLogs = '';
 		terminalLoading = true;
-		
+
 		try {
 			const res = await fetch(`/api/repo/${data.repo}/logs?run_id=${runId}`);
 			const json = await res.json();
@@ -93,7 +106,9 @@ import mermaid from 'mermaid';
 		if (activeTab === 'releases' && releasesPageInfo.hasNextPage && !loadingReleases) {
 			loadingReleases = true;
 			try {
-				const res = await fetch(`/api/repo/${data.repo}/history?type=releases&after=${releasesPageInfo.endCursor}`);
+				const res = await fetch(
+					`/api/repo/${data.repo}/history?type=releases&after=${releasesPageInfo.endCursor}`
+				);
 				const json = await res.json();
 				if (json.success) {
 					releases = [...releases, ...json.data];
@@ -107,7 +122,9 @@ import mermaid from 'mermaid';
 		} else if (activeTab === 'runs' && commitsPageInfo.hasNextPage && !loadingCommits) {
 			loadingCommits = true;
 			try {
-				const res = await fetch(`/api/repo/${data.repo}/history?type=commits&after=${commitsPageInfo.endCursor}`);
+				const res = await fetch(
+					`/api/repo/${data.repo}/history?type=commits&after=${commitsPageInfo.endCursor}`
+				);
 				const json = await res.json();
 				if (json.success) {
 					commits = [...commits, ...json.data];
@@ -143,11 +160,14 @@ import mermaid from 'mermaid';
 	});
 
 	onMount(() => {
-		const observer = new IntersectionObserver((entries) => {
-			if (entries[0].isIntersecting) {
-				loadMore();
-			}
-		}, { rootMargin: '100px' });
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0].isIntersecting) {
+					loadMore();
+				}
+			},
+			{ rootMargin: '100px' }
+		);
 
 		$effect(() => {
 			if (observerTarget) {
@@ -164,43 +184,84 @@ import mermaid from 'mermaid';
 	function formatDate(dateString: string) {
 		if (!dateString) return 'N/A';
 		const date = new Date(dateString);
-		return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }).format(date);
+		return new Intl.DateTimeFormat('en-US', {
+			month: 'short',
+			day: 'numeric',
+			year: 'numeric',
+			hour: 'numeric',
+			minute: '2-digit'
+		}).format(date);
 	}
 
 	function getStatusIcon(status: string) {
 		switch (status) {
-			case 'success': return CheckCircle;
-			case 'failure': return XCircle;
-			case 'pending': return Clock;
-			default: return AlertCircle;
+			case 'success':
+				return CheckCircle;
+			case 'failure':
+				return XCircle;
+			case 'cancelled':
+				return AlertCircle;
+			case 'pending':
+				return Clock;
+			default:
+				return AlertCircle;
 		}
 	}
-	
+
 	function getStatusColorClasses(status: string) {
 		switch (status) {
-			case 'success': return 'text-green-600 dark:text-green-400 bg-green-500/10 border-green-500/20';
-			case 'failure': return 'text-red-600 dark:text-red-400 bg-red-500/10 border-red-500/20';
-			case 'pending': return 'text-yellow-600 dark:text-yellow-400 bg-yellow-500/10 border-yellow-500/20';
-			default: return 'text-gray-500 dark:text-gray-400 bg-gray-500/10 border-gray-500/20';
+			case 'success':
+				return 'text-green-600 dark:text-green-400 bg-green-500/10 border-green-500/20';
+			case 'failure':
+				return 'text-red-600 dark:text-red-400 bg-red-500/10 border-red-500/20';
+			case 'cancelled':
+				return 'text-gray-500 dark:text-gray-400 bg-gray-500/10 border-gray-500/20';
+			case 'pending':
+				return 'text-yellow-600 dark:text-yellow-400 bg-yellow-500/10 border-yellow-500/20';
+			default:
+				return 'text-gray-500 dark:text-gray-400 bg-gray-500/10 border-gray-500/20';
 		}
 	}
 </script>
 
 <svelte:head>
 	<title>{data.repo} — Agent CI Dashboard</title>
-	<meta name="description" content="CI/CD pipeline status, release history, and build logs for {data.repo} in the Autonomic AI agent ecosystem." />
+	<meta
+		name="description"
+		content="CI/CD pipeline status, release history, and build logs for {data.repo} in the Autonomic AI agent ecosystem."
+	/>
 </svelte:head>
 
 <div class="max-w-[1000px] mx-auto px-6 py-12 flex flex-col min-h-[calc(100vh-4rem)] relative z-10">
-	
 	<!-- Header Navigation -->
 	<nav class="mb-10 flex items-center justify-between">
-		<a href="/" class="flex items-center gap-2 text-text-secondary-light dark:text-text-secondary-dark hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors font-medium">
+		<a
+			href="/"
+			class="flex items-center gap-2 text-text-secondary-light dark:text-text-secondary-dark hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors font-medium"
+		>
 			<ArrowLeft size={20} />
 			<span>Back to Dashboard</span>
 		</a>
-		<a href={data.repoUrl} target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 px-4 py-2 rounded-full bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark text-text-primary-light dark:text-text-primary-dark hover:border-cyan-500/50 hover:shadow-lg transition-all font-medium text-sm">
-			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+		<a
+			href={data.repoUrl}
+			target="_blank"
+			rel="noopener noreferrer"
+			class="flex items-center gap-2 px-4 py-2 rounded-full bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark text-text-primary-light dark:text-text-primary-dark hover:border-cyan-500/50 hover:shadow-lg transition-all font-medium text-sm"
+		>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="16"
+				height="16"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				><path
+					d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"
+				/><path d="M9 18c-4.51 2-5-2-7-2" /></svg
+			>
 			<span>View on GitHub</span>
 		</a>
 	</nav>
@@ -208,50 +269,77 @@ import mermaid from 'mermaid';
 	<!-- Page Title -->
 	<header class="mb-8">
 		<div class="flex items-center justify-between gap-4 mb-3">
-			<h1 class="text-4xl font-bold text-text-primary-light dark:text-text-primary-dark tracking-tight">
+			<h1
+				class="text-4xl font-bold text-text-primary-light dark:text-text-primary-dark tracking-tight"
+			>
 				{data.repo}
 			</h1>
 			{#if commits && commits.length > 0}
 				{@const latestStatus = commits[0].status}
 				{@const StatusIcon = getStatusIcon(latestStatus)}
-				<div class={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase border bg-surface-light dark:bg-surface-dark ${getStatusColorClasses(latestStatus)}`}>
+				<div
+					class={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase border bg-surface-light dark:bg-surface-dark ${getStatusColorClasses(latestStatus)}`}
+				>
 					<span class="relative flex h-2 w-2 mr-1">
-					  {#if latestStatus === 'pending'}
-						<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
-						<span class="relative inline-flex rounded-full h-2 w-2 bg-yellow-500" style="box-shadow: 0 0 8px currentColor"></span>
-					  {:else if latestStatus === 'success'}
-						<span class="relative inline-flex rounded-full h-2 w-2 bg-green-500" style="box-shadow: 0 0 8px currentColor"></span>
-					  {:else if latestStatus === 'failure'}
-						<span class="relative inline-flex rounded-full h-2 w-2 bg-red-500" style="box-shadow: 0 0 8px currentColor"></span>
-					  {:else}
-						<span class="relative inline-flex rounded-full h-2 w-2 bg-gray-500" style="box-shadow: 0 0 8px currentColor"></span>
-					  {/if}
+						{#if latestStatus === 'pending'}
+							<span
+								class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"
+							></span>
+							<span
+								class="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"
+								style="box-shadow: 0 0 8px currentColor"
+							></span>
+						{:else if latestStatus === 'success'}
+							<span
+								class="relative inline-flex rounded-full h-2 w-2 bg-green-500"
+								style="box-shadow: 0 0 8px currentColor"
+							></span>
+						{:else if latestStatus === 'failure'}
+							<span
+								class="relative inline-flex rounded-full h-2 w-2 bg-red-500"
+								style="box-shadow: 0 0 8px currentColor"
+							></span>
+						{:else if latestStatus === 'cancelled'}
+							<span
+								class="relative inline-flex rounded-full h-2 w-2 bg-gray-500"
+								style="box-shadow: 0 0 8px currentColor"
+							></span>
+						{:else}
+							<span
+								class="relative inline-flex rounded-full h-2 w-2 bg-gray-500"
+								style="box-shadow: 0 0 8px currentColor"
+							></span>
+						{/if}
 					</span>
 					{latestStatus}
 				</div>
 			{/if}
 		</div>
-		<p class="text-text-secondary-light dark:text-text-secondary-dark">Repository Details & Status History</p>
+		<p class="text-text-secondary-light dark:text-text-secondary-dark">
+			Repository Details & Status History
+		</p>
 	</header>
 
 	<!-- Tabs -->
-	<div class="flex gap-2 mb-8 border-b border-border-light dark:border-border-dark overflow-x-auto pb-1">
-		<button 
-			onclick={() => activeTab = 'readme'}
+	<div
+		class="flex gap-2 mb-8 border-b border-border-light dark:border-border-dark overflow-x-auto pb-1"
+	>
+		<button
+			onclick={() => (activeTab = 'readme')}
 			class={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-medium transition-colors whitespace-nowrap ${activeTab === 'readme' ? 'text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-600 dark:border-cyan-400 bg-black/5 dark:bg-white/5' : 'text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark hover:bg-black/5 dark:hover:bg-white/5'}`}
 		>
 			<FileText size={18} />
 			<span>README.md</span>
 		</button>
-		<button 
-			onclick={() => activeTab = 'releases'}
+		<button
+			onclick={() => (activeTab = 'releases')}
 			class={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-medium transition-colors whitespace-nowrap ${activeTab === 'releases' ? 'text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-600 dark:border-cyan-400 bg-black/5 dark:bg-white/5' : 'text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark hover:bg-black/5 dark:hover:bg-white/5'}`}
 		>
 			<Tag size={18} />
 			<span>Release History</span>
 		</button>
-		<button 
-			onclick={() => activeTab = 'runs'}
+		<button
+			onclick={() => (activeTab = 'runs')}
 			class={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-medium transition-colors whitespace-nowrap ${activeTab === 'runs' ? 'text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-600 dark:border-cyan-400 bg-black/5 dark:bg-white/5' : 'text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark hover:bg-black/5 dark:hover:bg-white/5'}`}
 		>
 			<Activity size={18} />
@@ -263,49 +351,79 @@ import mermaid from 'mermaid';
 	<div class="flex flex-col gap-12">
 		{#if activeTab === 'readme'}
 			<!-- README Section -->
-			<section class="glass-card rounded-2xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
+			<section
+				class="glass-card rounded-2xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500"
+			>
 				<div class="p-6 md:p-8 overflow-x-auto">
-					<article class="prose prose-slate dark:prose-invert max-w-none prose-headings:font-semibold prose-a:text-cyan-600 dark:prose-a:text-cyan-400 prose-pre:bg-base-light dark:prose-pre:bg-base-dark prose-pre:border prose-pre:border-border-light dark:prose-pre:border-border-dark">
+					<article
+						class="prose prose-slate dark:prose-invert max-w-none prose-headings:font-semibold prose-a:text-cyan-600 dark:prose-a:text-cyan-400 prose-pre:bg-base-light dark:prose-pre:bg-base-dark prose-pre:border prose-pre:border-border-light dark:prose-pre:border-border-dark"
+					>
 						{@html data.readmeHtml}
 					</article>
 				</div>
 			</section>
-		
 		{:else if activeTab === 'releases'}
 			<!-- Release Notes History Section -->
 			<section class="animate-in fade-in slide-in-from-bottom-4 duration-500">
 				{#if releases && releases.length > 0}
 					<div class="flex flex-col gap-6">
 						{#each releases as release}
-							<a href={release.url} target="_blank" rel="noopener noreferrer" class="group block glass-card rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all hover:shadow-cyan-500/10">
-								<div class="bg-black/5 dark:bg-white/5 border-b border-border-light dark:border-border-dark px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+							<a
+								href={release.url}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="group block glass-card rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all hover:shadow-cyan-500/10"
+							>
+								<div
+									class="bg-black/5 dark:bg-white/5 border-b border-border-light dark:border-border-dark px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+								>
 									<div class="flex flex-col gap-1">
-										<h3 class="text-lg font-bold text-text-primary-light dark:text-text-primary-dark group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
+										<h3
+											class="text-lg font-bold text-text-primary-light dark:text-text-primary-dark group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors"
+										>
 											{release.name}
 										</h3>
-										<div class="flex items-center gap-2 text-sm text-text-secondary-light dark:text-text-secondary-dark">
-											<span class="font-mono bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-border-light dark:border-border-dark group-hover:border-cyan-500/30 transition-colors">{release.tag}</span>
-											<span class="flex items-center gap-1"><Clock size={14} /> {formatDate(release.publishedAt)}</span>
+										<div
+											class="flex items-center gap-2 text-sm text-text-secondary-light dark:text-text-secondary-dark"
+										>
+											<span
+												class="font-mono bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-border-light dark:border-border-dark group-hover:border-cyan-500/30 transition-colors"
+												>{release.tag}</span
+											>
+											<span class="flex items-center gap-1"
+												><Clock size={14} /> {formatDate(release.publishedAt)}</span
+											>
 										</div>
 									</div>
-									
+
 									{#if release.author}
-										<div class="flex items-center gap-2 px-3 py-1.5 rounded-full border border-border-light dark:border-border-dark bg-white/50 dark:bg-black/20">
-											<img src={release.author.avatarUrl} alt={release.author.login} class="w-5 h-5 rounded-full" />
-											<span class="text-sm font-medium text-text-primary-light dark:text-text-primary-dark">{release.author.login}</span>
+										<div
+											class="flex items-center gap-2 px-3 py-1.5 rounded-full border border-border-light dark:border-border-dark bg-white/50 dark:bg-black/20"
+										>
+											<img
+												src={release.author.avatarUrl}
+												alt={release.author.login}
+												class="w-5 h-5 rounded-full"
+											/>
+											<span
+												class="text-sm font-medium text-text-primary-light dark:text-text-primary-dark"
+												>{release.author.login}</span
+											>
 										</div>
 									{/if}
 								</div>
-								
+
 								<div class="p-6 overflow-x-auto pointer-events-none">
-									<article class="prose prose-slate dark:prose-invert max-w-none prose-sm prose-headings:font-semibold prose-a:text-cyan-600 dark:prose-a:text-cyan-400 prose-pre:bg-base-light dark:prose-pre:bg-base-dark prose-pre:border prose-pre:border-border-light dark:prose-pre:border-border-dark">
+									<article
+										class="prose prose-slate dark:prose-invert max-w-none prose-sm prose-headings:font-semibold prose-a:text-cyan-600 dark:prose-a:text-cyan-400 prose-pre:bg-base-light dark:prose-pre:bg-base-dark prose-pre:border prose-pre:border-border-light dark:prose-pre:border-border-dark"
+									>
 										{@html release.descriptionHtml}
 									</article>
 								</div>
 							</a>
 						{/each}
 					</div>
-					
+
 					<!-- Intersection Observer Target -->
 					{#if releasesPageInfo.hasNextPage}
 						<div bind:this={observerTarget} class="h-20 flex items-center justify-center mt-6">
@@ -313,12 +431,13 @@ import mermaid from 'mermaid';
 						</div>
 					{/if}
 				{:else}
-					<div class="bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-2xl p-8 text-center text-text-secondary-light dark:text-text-secondary-dark">
+					<div
+						class="bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-2xl p-8 text-center text-text-secondary-light dark:text-text-secondary-dark"
+					>
 						<p>No formal releases found for this repository.</p>
 					</div>
 				{/if}
 			</section>
-		
 		{:else if activeTab === 'runs'}
 			<!-- CI Runs History Section -->
 			<section class="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -326,21 +445,43 @@ import mermaid from 'mermaid';
 					<div class="flex flex-col gap-4">
 						{#each commits as commit}
 							{@const StatusIcon = getStatusIcon(commit.status)}
-							<div class="glass-card rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4">
-								
+							<div
+								class="glass-card rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4"
+							>
 								<!-- Commit Header -->
 								<div class="flex justify-between items-start">
 									<div class="flex flex-col gap-1.5">
-										<h3 class="text-[15px] font-medium text-text-primary-light dark:text-text-primary-dark max-w-2xl truncate" title={commit.message}>{commit.message}</h3>
-										<div class="flex items-center gap-3 text-[13px] text-text-secondary-light dark:text-text-secondary-dark">
+										<h3
+											class="text-[15px] font-medium text-text-primary-light dark:text-text-primary-dark max-w-2xl truncate"
+											title={commit.message}
+										>
+											{commit.message}
+										</h3>
+										<div
+											class="flex items-center gap-3 text-[13px] text-text-secondary-light dark:text-text-secondary-dark"
+										>
 											{#if commit.author}
-												<a href={`https://github.com/${commit.author.login}`} target="_blank" rel="noopener noreferrer" class="flex items-center gap-1.5 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">
-													<img src={commit.author.avatarUrl} alt={commit.author.login} class="w-4 h-4 rounded-full" />
+												<a
+													href={`https://github.com/${commit.author.login}`}
+													target="_blank"
+													rel="noopener noreferrer"
+													class="flex items-center gap-1.5 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
+												>
+													<img
+														src={commit.author.avatarUrl}
+														alt={commit.author.login}
+														class="w-4 h-4 rounded-full"
+													/>
 													<span>{commit.author.login}</span>
 												</a>
 											{/if}
 											<div class="flex items-center gap-1.5">
-												<a href={`${data.repoUrl}/commit/${commit.sha}`} target="_blank" rel="noopener noreferrer" class="font-mono bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-border-light dark:border-border-dark text-[11px] hover:text-cyan-600 dark:hover:text-cyan-400 hover:border-cyan-500/30 transition-colors">
+												<a
+													href={`${data.repoUrl}/commit/${commit.sha}`}
+													target="_blank"
+													rel="noopener noreferrer"
+													class="font-mono bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-border-light dark:border-border-dark text-[11px] hover:text-cyan-600 dark:hover:text-cyan-400 hover:border-cyan-500/30 transition-colors"
+												>
 													{commit.sha.substring(0, 7)}
 												</a>
 											</div>
@@ -350,8 +491,10 @@ import mermaid from 'mermaid';
 											</div>
 										</div>
 									</div>
-									
-									<div class={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide uppercase border ${getStatusColorClasses(commit.status)}`}>
+
+									<div
+										class={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide uppercase border ${getStatusColorClasses(commit.status)}`}
+									>
 										<StatusIcon size={14} />
 										<span>{commit.status}</span>
 									</div>
@@ -359,22 +502,66 @@ import mermaid from 'mermaid';
 
 								<!-- Workflows -->
 								{#if commit.runs && commit.runs.length > 0}
-									<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-3 border-t border-border-light/50 dark:border-border-dark/50">
+									<div
+										class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-3 border-t border-border-light/50 dark:border-border-dark/50"
+									>
 										{#each commit.runs as run}
 											{@const WfIcon = getStatusIcon(run.status)}
-											<div class="group flex items-center justify-between text-[13px] bg-black/5 dark:bg-white/5 border border-border-light/50 dark:border-border-dark/50 px-3 py-2 rounded-lg hover:border-cyan-500/30 transition-colors">
-												<button 
-													disabled={run.status === 'queued' || run.status === 'in_progress' || run.status === 'pending'}
-													onclick={(e) => { e.preventDefault(); if (run.id) viewLogs(run.id, run.name, run.status); }} 
+											<div
+												class="group flex items-center justify-between text-[13px] bg-black/5 dark:bg-white/5 border border-border-light/50 dark:border-border-dark/50 px-3 py-2 rounded-lg hover:border-cyan-500/30 transition-colors"
+											>
+												<button
+													disabled={run.status === 'queued' ||
+														run.status === 'in_progress' ||
+														run.status === 'pending'}
+													onclick={(e) => {
+														e.preventDefault();
+														if (run.id) viewLogs(run.id, run.name, run.status);
+													}}
 													class="flex items-center gap-2 flex-1 min-w-0 text-left focus:outline-none disabled:opacity-70 disabled:cursor-not-allowed group/btn"
-													title={run.status === 'queued' || run.status === 'in_progress' || run.status === 'pending' ? 'Logs will be available when the run completes' : run.name}
+													title={run.status === 'queued' ||
+													run.status === 'in_progress' ||
+													run.status === 'pending'
+														? 'Logs will be available when the run completes'
+														: run.name}
 												>
-													<WfIcon size={14} class={run.status === 'success' ? 'text-green-500 dark:text-green-400' : run.status === 'failure' || run.status === 'timed_out' ? 'text-red-500 dark:text-red-400' : 'text-yellow-500 dark:text-yellow-400'} />
-													<span class="text-text-primary-light dark:text-text-primary-dark truncate transition-colors group-[&:not(:disabled)]/btn:group-hover:text-cyan-600 group-[&:not(:disabled)]/btn:dark:group-hover:text-cyan-400">{run.name}</span>
+													<WfIcon
+														size={14}
+														class={run.status === 'success'
+															? 'text-green-500 dark:text-green-400'
+															: run.status === 'failure' || run.status === 'timed_out'
+																? 'text-red-500 dark:text-red-400'
+																: run.status === 'cancelled'
+																	? 'text-gray-500 dark:text-gray-400'
+																	: 'text-yellow-500 dark:text-yellow-400'}
+													/>
+													<span
+														class="text-text-primary-light dark:text-text-primary-dark truncate transition-colors group-[&:not(:disabled)]/btn:group-hover:text-cyan-600 group-[&:not(:disabled)]/btn:dark:group-hover:text-cyan-400"
+														>{run.name}</span
+													>
 												</button>
-												
-												<a href={run.url || '#'} target={run.url ? '_blank' : undefined} rel="noopener noreferrer" class="opacity-0 group-hover:opacity-100 p-1.5 ml-2 text-text-secondary-light hover:text-cyan-600 dark:text-text-secondary-dark dark:hover:text-cyan-400 bg-white dark:bg-black rounded border border-border-light dark:border-border-dark shadow-sm transition-all" title="View on GitHub">
-													<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+
+												<a
+													href={run.url || '#'}
+													target={run.url ? '_blank' : undefined}
+													rel="noopener noreferrer"
+													class="opacity-0 group-hover:opacity-100 p-1.5 ml-2 text-text-secondary-light hover:text-cyan-600 dark:text-text-secondary-dark dark:hover:text-cyan-400 bg-white dark:bg-black rounded border border-border-light dark:border-border-dark shadow-sm transition-all"
+													title="View on GitHub"
+												>
+													<svg
+														xmlns="http://www.w3.org/2000/svg"
+														width="12"
+														height="12"
+														viewBox="0 0 24 24"
+														fill="none"
+														stroke="currentColor"
+														stroke-width="2"
+														stroke-linecap="round"
+														stroke-linejoin="round"
+														><path
+															d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"
+														/><path d="M9 18c-4.51 2-5-2-7-2" /></svg
+													>
 												</a>
 											</div>
 										{/each}
@@ -391,7 +578,9 @@ import mermaid from 'mermaid';
 						</div>
 					{/if}
 				{:else}
-					<div class="bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-2xl p-8 text-center text-text-secondary-light dark:text-text-secondary-dark">
+					<div
+						class="bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-2xl p-8 text-center text-text-secondary-light dark:text-text-secondary-dark"
+					>
 						<p>No CI runs found for the default branch.</p>
 					</div>
 				{/if}
@@ -402,17 +591,26 @@ import mermaid from 'mermaid';
 
 <!-- Terminal Modal -->
 {#if terminalOpen}
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-		<div class="bg-[#0D1117] border border-border-dark rounded-xl w-full max-w-5xl h-[80vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+	<div
+		class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+	>
+		<div
+			class="bg-[#0D1117] border border-border-dark rounded-xl w-full max-w-5xl h-[80vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+		>
 			<!-- Terminal Header -->
-			<div class="bg-[#161B22] border-b border-border-dark px-4 py-3 flex items-center justify-between">
+			<div
+				class="bg-[#161B22] border-b border-border-dark px-4 py-3 flex items-center justify-between"
+			>
 				<div class="flex items-center gap-3">
 					<TerminalIcon size={16} class="text-gray-400" />
 					<h3 class="text-gray-200 font-mono text-sm font-semibold">{terminalTitle} Logs</h3>
 					{#if data.session && (terminalRunStatus === 'failure' || terminalRunStatus === 'timed_out' || terminalRunStatus === 'cancelled')}
 						<div class="w-px h-4 bg-border-dark mx-2"></div>
-						<button 
-							onclick={(e) => { e.preventDefault(); rerunWorkflow(terminalRunId, 'failed'); }}
+						<button
+							onclick={(e) => {
+								e.preventDefault();
+								rerunWorkflow(terminalRunId, 'failed');
+							}}
 							disabled={rerunningIds.has(terminalRunId)}
 							class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 							title="Rerun Failed Jobs"
@@ -422,13 +620,18 @@ import mermaid from 'mermaid';
 						</button>
 					{/if}
 				</div>
-				<button onclick={() => terminalOpen = false} class="text-gray-400 hover:text-white transition-colors bg-[#21262D] hover:bg-[#30363D] p-1.5 rounded-md">
+				<button
+					onclick={() => (terminalOpen = false)}
+					class="text-gray-400 hover:text-white transition-colors bg-[#21262D] hover:bg-[#30363D] p-1.5 rounded-md"
+				>
 					<X size={16} />
 				</button>
 			</div>
-			
+
 			<!-- Terminal Body -->
-			<div class="flex-1 p-4 overflow-y-auto bg-[#0D1117] text-green-400 font-mono text-[13px] leading-relaxed custom-scrollbar">
+			<div
+				class="flex-1 p-4 overflow-y-auto bg-[#0D1117] text-green-400 font-mono text-[13px] leading-relaxed custom-scrollbar"
+			>
 				{#if terminalLoading}
 					<div class="flex flex-col items-center justify-center h-full gap-3 text-gray-500">
 						<Loader2 class="w-8 h-8 animate-spin text-cyan-500" />
@@ -447,14 +650,14 @@ import mermaid from 'mermaid';
 		width: 8px;
 	}
 	.custom-scrollbar::-webkit-scrollbar-track {
-		background: #0D1117;
+		background: #0d1117;
 	}
 	.custom-scrollbar::-webkit-scrollbar-thumb {
-		background: #30363D;
+		background: #30363d;
 		border-radius: 4px;
 	}
 	.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-		background: #8B949E;
+		background: #8b949e;
 	}
 
 	:global(.inline-code::before),
@@ -462,8 +665,8 @@ import mermaid from 'mermaid';
 		content: none !important;
 	}
 
-	:global(.prose :where(code):not(:where([class~="not-prose"] *))::before),
-	:global(.prose :where(code):not(:where([class~="not-prose"] *))::after) {
+	:global(.prose :where(code):not(:where([class~='not-prose'] *))::before),
+	:global(.prose :where(code):not(:where([class~='not-prose'] *))::after) {
 		content: none !important;
 	}
 

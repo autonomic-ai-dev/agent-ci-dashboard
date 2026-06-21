@@ -31,7 +31,7 @@ export async function GET(event) {
 
 	try {
 		let query = '';
-		
+
 		if (type === 'releases') {
 			query = `
 				query getMoreReleases($owner: String!, $repo: String!, $after: String!) {
@@ -115,11 +115,13 @@ export async function GET(event) {
 				descriptionHtml: node.descriptionHTML || '<p>Release has no description.</p>',
 				url: node.url,
 				publishedAt: node.publishedAt,
-				author: node.author ? {
-					login: node.author.login,
-					avatarUrl: node.author.avatarUrl,
-					url: node.author.url
-				} : null
+				author: node.author
+					? {
+							login: node.author.login,
+							avatarUrl: node.author.avatarUrl,
+							url: node.author.url
+						}
+					: null
 			}));
 			return json({
 				success: true,
@@ -127,60 +129,88 @@ export async function GET(event) {
 				pageInfo: repoData.releases.pageInfo
 			});
 		} else if (type === 'commits') {
-			const commits = repoData.defaultBranchRef?.target?.history?.nodes.map((commit: any) => {
-				const validRuns = (commit.checkSuites?.nodes || []).filter((cs: any) => cs.workflowRun !== null);
-				
-				// Deduplicate runs by workflow name, keeping the most recent attempt
-				const sortedRuns = validRuns.sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-				const uniqueRunsMap = new Map();
-				for (const run of sortedRuns) {
-					const name = run.workflowRun?.workflow?.name || 'Workflow';
-					if (!uniqueRunsMap.has(name)) {
-						uniqueRunsMap.set(name, run);
-					}
-				}
-				const latestUniqueRuns = Array.from(uniqueRunsMap.values());
-				
-				let overallStatus = 'unknown';
-				if (latestUniqueRuns.length === 0) {
-					overallStatus = 'no-runs';
-				} else {
-					const isPending = latestUniqueRuns.some((run: any) => run.status !== 'COMPLETED');
-					const hasFailure = latestUniqueRuns.some((run: any) => run.status === 'COMPLETED' && (run.conclusion === 'FAILURE' || run.conclusion === 'TIMED_OUT' || run.conclusion === 'CANCELLED'));
-					
-					if (hasFailure) {
-						overallStatus = 'failure';
-					} else if (isPending) {
-						overallStatus = 'pending';
-					} else {
-						const allSuccess = latestUniqueRuns.every((run: any) => run.status === 'COMPLETED' && (run.conclusion === 'SUCCESS' || run.conclusion === 'SKIPPED'));
-						if (allSuccess) {
-							overallStatus = 'success';
+			const commits =
+				repoData.defaultBranchRef?.target?.history?.nodes.map((commit: any) => {
+					const validRuns = (commit.checkSuites?.nodes || []).filter(
+						(cs: any) => cs.workflowRun !== null
+					);
+
+					// Deduplicate runs by workflow name, keeping most recent by workflowRun databaseId
+					const sortedRuns = validRuns.sort(
+						(a: any, b: any) => (b.workflowRun?.databaseId || 0) - (a.workflowRun?.databaseId || 0)
+					);
+					const uniqueRunsMap = new Map();
+					for (const run of sortedRuns) {
+						const name = run.workflowRun?.workflow?.name || 'Workflow';
+						if (!uniqueRunsMap.has(name)) {
+							uniqueRunsMap.set(name, run);
 						}
 					}
-				}
+					const latestUniqueRuns = Array.from(uniqueRunsMap.values());
 
-				return {
-					sha: commit.oid,
-					message: commit.messageHeadline,
-					date: commit.committedDate,
-					author: commit.author?.user ? {
-						login: commit.author.user.login,
-						avatarUrl: commit.author.user.avatarUrl
-					} : null,
-					status: overallStatus,
-					runs: latestUniqueRuns.map((run: any) => ({
-						id: run.workflowRun?.databaseId || null,
-						name: run.workflowRun?.workflow?.name || 'Workflow',
-						url: run.workflowRun?.url,
-						status: run.status !== 'COMPLETED' ? run.status.toLowerCase() : (run.conclusion || 'completed').toLowerCase(),
-						updatedAt: run.updatedAt
-					}))
-				};
-			}) || [];
+					let overallStatus = 'unknown';
+					if (latestUniqueRuns.length === 0) {
+						overallStatus = 'no-runs';
+					} else {
+						const isPending = latestUniqueRuns.some((run: any) => run.status !== 'COMPLETED');
+						const hasFailure = latestUniqueRuns.some(
+							(run: any) =>
+								run.status === 'COMPLETED' &&
+								(run.conclusion === 'FAILURE' ||
+									run.conclusion === 'TIMED_OUT' ||
+									run.conclusion === 'ACTION_REQUIRED')
+						);
+						const hasCancelled = latestUniqueRuns.some(
+							(run: any) => run.status === 'COMPLETED' && run.conclusion === 'CANCELLED'
+						);
 
-			const pageInfo = repoData.defaultBranchRef?.target?.history?.pageInfo || { hasNextPage: false, endCursor: null };
-			
+						if (hasFailure) {
+							overallStatus = 'failure';
+						} else if (hasCancelled) {
+							overallStatus = 'cancelled';
+						} else if (isPending) {
+							overallStatus = 'pending';
+						} else {
+							const allSuccess = latestUniqueRuns.every(
+								(run: any) =>
+									run.status === 'COMPLETED' &&
+									(run.conclusion === 'SUCCESS' || run.conclusion === 'SKIPPED')
+							);
+							if (allSuccess) {
+								overallStatus = 'success';
+							}
+						}
+					}
+
+					return {
+						sha: commit.oid,
+						message: commit.messageHeadline,
+						date: commit.committedDate,
+						author: commit.author?.user
+							? {
+									login: commit.author.user.login,
+									avatarUrl: commit.author.user.avatarUrl
+								}
+							: null,
+						status: overallStatus,
+						runs: latestUniqueRuns.map((run: any) => ({
+							id: run.workflowRun?.databaseId || null,
+							name: run.workflowRun?.workflow?.name || 'Workflow',
+							url: run.workflowRun?.url,
+							status:
+								run.status !== 'COMPLETED'
+									? run.status.toLowerCase()
+									: (run.conclusion || 'completed').toLowerCase(),
+							updatedAt: run.updatedAt
+						}))
+					};
+				}) || [];
+
+			const pageInfo = repoData.defaultBranchRef?.target?.history?.pageInfo || {
+				hasNextPage: false,
+				endCursor: null
+			};
+
 			return json({
 				success: true,
 				data: commits,

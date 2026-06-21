@@ -28,7 +28,7 @@ export async function POST(event) {
 
 	// 2. Parse Payload
 	const payload = JSON.parse(rawBody);
-	
+
 	// We only care about workflow_run events
 	if (event.request.headers.get('x-github-event') !== 'workflow_run') {
 		return json({ message: 'Event ignored' });
@@ -40,12 +40,12 @@ export async function POST(event) {
 	if (action === 'completed' && workflow_run && workflow_run.conclusion === 'failure') {
 		const repoName = repository?.name;
 		const workflowName = workflow_run.name;
-		
+
 		console.log(`[Webhook] Workflow ${workflowName} in ${repoName} failed! Triggering pushes...`);
 
 		// Fetch all users who have subscribed
 		const users = await kv.smembers('push_users');
-		
+
 		let sentCount = 0;
 		for (const username of users) {
 			const subStrings = await kv.smembers(`push_subscriptions:${username}`);
@@ -59,7 +59,7 @@ export async function POST(event) {
 					});
 
 					const success = await sendPushNotification(subscription, pushPayload);
-					
+
 					// Clean up expired subscriptions
 					if (!success) {
 						await kv.srem(`push_subscriptions:${username}`, subStr);
