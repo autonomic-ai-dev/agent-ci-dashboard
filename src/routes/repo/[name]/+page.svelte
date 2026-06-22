@@ -11,15 +11,32 @@
 		Loader2,
 		RefreshCw,
 		Terminal as TerminalIcon,
-		X
+		X,
+		GitPullRequest,
+		CircleDot,
+		GitMerge,
+		User
 	} from '@lucide/svelte';
 	import { onMount } from 'svelte';
+	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 	import mermaid from 'mermaid';
 
 	let { data } = $props();
 
-	type Tab = 'readme' | 'releases' | 'runs';
-	let activeTab = $state<Tab>('readme');
+	type Tab = 'readme' | 'releases' | 'runs' | 'pulls' | 'issues';
+	let activeTab = $derived.by<Tab>(() => {
+		const tabParam = $page.url.searchParams.get('tab') as Tab | null;
+		if (tabParam && ['readme', 'releases', 'runs', 'pulls', 'issues'].includes(tabParam)) return tabParam;
+		return 'readme';
+	});
+
+	function switchTab(tab: Tab) {
+		const url = new URL($page.url);
+		if (tab === 'readme') url.searchParams.delete('tab');
+		else url.searchParams.set('tab', tab);
+		goto(url.pathname + url.search, { replaceState: true, noScroll: true });
+	}
 
 	// State for infinite scrolling
 	let releases = $state<any[]>([]);
@@ -30,6 +47,16 @@
 	let commitsPageInfo = $state<any>({ hasNextPage: false, endCursor: null });
 	let loadingCommits = $state(false);
 
+	// PR State
+	let pulls = $state<any[]>([]);
+	let pullsPageInfo = $state<any>({ hasNextPage: false, endCursor: null });
+	let loadingPulls = $state(false);
+
+	// Issue State
+	let issues = $state<any[]>([]);
+	let issuesPageInfo = $state<any>({ hasNextPage: false, endCursor: null });
+	let loadingIssues = $state(false);
+
 	// Terminal Logs State
 	let terminalOpen = $state(false);
 	let terminalLogs = $state('');
@@ -39,12 +66,23 @@
 	let terminalLoading = $state(false);
 
 	let rerunningIds = $state<Set<string>>(new Set());
+	let mergingIds = $state<Set<number>>(new Set());
+	let closingIds = $state<Set<number>>(new Set());
 
 	$effect(() => {
 		releases = data.releases || [];
 		releasesPageInfo = data.releasesPageInfo || { hasNextPage: false, endCursor: null };
 		commits = data.commits || [];
 		commitsPageInfo = data.commitsPageInfo || { hasNextPage: false, endCursor: null };
+	});
+
+	$effect(() => {
+		if (activeTab === 'pulls' && pulls.length === 0) {
+			loadPulls();
+		}
+		if (activeTab === 'issues' && issues.length === 0) {
+			loadIssues();
+		}
 	});
 
 	let observerTarget = $state<HTMLElement | null>(null);
@@ -101,6 +139,94 @@
 		}
 	}
 
+	async function loadPulls(after?: string) {
+		if (loadingPulls) return;
+		loadingPulls = true;
+		try {
+			const params = after ? `?after=${after}` : '';
+			const res = await fetch(`/api/repo/${data.repo}/pulls${params}`);
+			const json = await res.json();
+			if (json.success) {
+				pulls = after ? [...pulls, ...json.data] : json.data;
+				pullsPageInfo = json.pageInfo;
+			}
+		} catch (e) {
+			console.error('Failed to fetch PRs', e);
+		} finally {
+			loadingPulls = false;
+		}
+	}
+
+	async function loadIssues(after?: string) {
+		if (loadingIssues) return;
+		loadingIssues = true;
+		try {
+			const params = after ? `?after=${after}` : '';
+			const res = await fetch(`/api/repo/${data.repo}/issues${params}`);
+			const json = await res.json();
+			if (json.success) {
+				issues = after ? [...issues, ...json.data] : json.data;
+				issuesPageInfo = json.pageInfo;
+			}
+		} catch (e) {
+			console.error('Failed to fetch issues', e);
+		} finally {
+			loadingIssues = false;
+		}
+	}
+
+	async function mergePR(pullNumber: number) {
+		mergingIds.add(pullNumber);
+		mergingIds = new Set(mergingIds);
+
+		try {
+			const res = await fetch(`/api/repo/${data.repo}/pulls/merge`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ pullNumber })
+			});
+
+			if (res.ok) {
+				pulls = pulls.filter((pr) => pr.number !== pullNumber);
+			} else {
+				const json = await res.json();
+				alert(json.error || 'Failed to merge PR');
+			}
+		} catch (e) {
+			console.error('Error merging PR:', e);
+			alert('Network error while merging');
+		} finally {
+			mergingIds.delete(pullNumber);
+			mergingIds = new Set(mergingIds);
+		}
+	}
+
+	async function closeIssue(issueNumber: number) {
+		closingIds.add(issueNumber);
+		closingIds = new Set(closingIds);
+
+		try {
+			const res = await fetch(`/api/repo/${data.repo}/issues/close`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ issueNumber })
+			});
+
+			if (res.ok) {
+				issues = issues.filter((issue) => issue.number !== issueNumber);
+			} else {
+				const json = await res.json();
+				alert(json.error || 'Failed to close issue');
+			}
+		} catch (e) {
+			console.error('Error closing issue:', e);
+			alert('Network error while closing issue');
+		} finally {
+			closingIds.delete(issueNumber);
+			closingIds = new Set(closingIds);
+		}
+	}
+
 	// Load more function
 	async function loadMore() {
 		if (activeTab === 'releases' && releasesPageInfo.hasNextPage && !loadingReleases) {
@@ -135,6 +261,10 @@
 			} finally {
 				loadingCommits = false;
 			}
+		} else if (activeTab === 'pulls' && pullsPageInfo.hasNextPage && !loadingPulls) {
+			loadPulls(pullsPageInfo.endCursor);
+		} else if (activeTab === 'issues' && issuesPageInfo.hasNextPage && !loadingIssues) {
+			loadIssues(issuesPageInfo.endCursor);
 		}
 	}
 
@@ -352,25 +482,39 @@
 		class="flex gap-2 mb-8 border-b border-border-light dark:border-border-dark overflow-x-auto pb-1"
 	>
 		<button
-			onclick={() => (activeTab = 'readme')}
+			onclick={() => switchTab('readme')}
 			class={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-medium transition-colors whitespace-nowrap ${activeTab === 'readme' ? 'text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-600 dark:border-cyan-400 bg-black/5 dark:bg-white/5' : 'text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark hover:bg-black/5 dark:hover:bg-white/5'}`}
 		>
 			<FileText size={18} />
 			<span>README.md</span>
 		</button>
 		<button
-			onclick={() => (activeTab = 'releases')}
+			onclick={() => switchTab('releases')}
 			class={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-medium transition-colors whitespace-nowrap ${activeTab === 'releases' ? 'text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-600 dark:border-cyan-400 bg-black/5 dark:bg-white/5' : 'text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark hover:bg-black/5 dark:hover:bg-white/5'}`}
 		>
 			<Tag size={18} />
 			<span>Release History</span>
 		</button>
 		<button
-			onclick={() => (activeTab = 'runs')}
+			onclick={() => switchTab('runs')}
 			class={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-medium transition-colors whitespace-nowrap ${activeTab === 'runs' ? 'text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-600 dark:border-cyan-400 bg-black/5 dark:bg-white/5' : 'text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark hover:bg-black/5 dark:hover:bg-white/5'}`}
 		>
 			<Activity size={18} />
 			<span>CI History</span>
+		</button>
+		<button
+			onclick={() => switchTab('pulls')}
+			class={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-medium transition-colors whitespace-nowrap ${activeTab === 'pulls' ? 'text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-600 dark:border-cyan-400 bg-black/5 dark:bg-white/5' : 'text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark hover:bg-black/5 dark:hover:bg-white/5'}`}
+		>
+			<GitPullRequest size={18} />
+			<span>Pull Requests</span>
+		</button>
+		<button
+			onclick={() => switchTab('issues')}
+			class={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg font-medium transition-colors whitespace-nowrap ${activeTab === 'issues' ? 'text-cyan-600 dark:text-cyan-400 border-b-2 border-cyan-600 dark:border-cyan-400 bg-black/5 dark:bg-white/5' : 'text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark hover:bg-black/5 dark:hover:bg-white/5'}`}
+		>
+			<CircleDot size={18} />
+			<span>Issues</span>
 		</button>
 	</div>
 
@@ -609,6 +753,306 @@
 						class="bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-2xl p-8 text-center text-text-secondary-light dark:text-text-secondary-dark"
 					>
 						<p>No CI runs found for the default branch.</p>
+					</div>
+				{/if}
+			</section>
+		{:else if activeTab === 'pulls'}
+			<!-- Pull Requests Section -->
+			<section class="animate-in fade-in slide-in-from-bottom-4 duration-500">
+				{#if pulls && pulls.length > 0}
+					<div class="flex flex-col gap-4">
+						{#each pulls as pr}
+							{@const PrStatusIcon = getStatusIcon(pr.status)}
+							{@const isConflicting = pr.mergeable === 'CONFLICTING'}
+							{@const isUnknown = pr.mergeable === 'UNKNOWN'}
+							<div
+								class="glass-card rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4"
+							>
+								<!-- PR Header -->
+								<div class="flex justify-between items-start gap-4">
+									<div class="flex flex-col gap-1.5 min-w-0 flex-1">
+										<a
+											href={pr.url}
+											target="_blank"
+											rel="noopener noreferrer"
+											class="text-[15px] font-medium text-text-primary-light dark:text-text-primary-dark hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors truncate"
+											title={pr.title}
+										>
+											{pr.title}
+										</a>
+										<div
+											class="flex items-center gap-3 text-[13px] text-text-secondary-light dark:text-text-secondary-dark flex-wrap"
+										>
+											<span class="font-mono bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-border-light dark:border-border-dark"
+												>#{pr.number}</span
+											>
+											{#if pr.author}
+												<a
+													href={pr.author.url}
+													target="_blank"
+													rel="noopener noreferrer"
+													class="flex items-center gap-1.5 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
+												>
+													<img
+														src={pr.author.avatarUrl}
+														alt={pr.author.login}
+														class="w-4 h-4 rounded-full"
+													/>
+													<span>{pr.author.login}</span>
+												</a>
+											{/if}
+											<span class="flex items-center gap-1"
+												><Clock size={13} /> {formatDate(pr.createdAt)}</span
+											>
+											<span class="text-xs font-mono text-text-secondary-light dark:text-text-secondary-dark"
+												>{pr.headRefName} → {pr.baseRefName}</span
+											>
+										</div>
+										<!-- Labels -->
+										{#if pr.labels && pr.labels.length > 0}
+											<div class="flex flex-wrap gap-1.5 mt-1">
+												{#each pr.labels as label}
+													<span
+														class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border"
+														style="background-color: #{label.color}20; border-color: #{label.color}40; color: #{label.color === 'ffffff' ? 'currentColor' : '#' + label.color}"
+														title={label.description || label.name}
+													>
+														{label.name}
+													</span>
+												{/each}
+											</div>
+										{/if}
+									</div>
+
+									<div class="flex items-center gap-2 shrink-0">
+										<!-- Mergeable State -->
+										<div
+											class="hidden sm:flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium border {isConflicting ? 'border-red-500/30 text-red-400' : isUnknown ? 'border-yellow-500/30 text-yellow-400' : 'border-green-500/30 text-green-400'}"
+											title={isConflicting ? 'Merge conflicts' : isUnknown ? 'Mergeability unknown' : 'Ready to merge'}
+										>
+											{#if isConflicting}
+												<XCircle size={12} />
+												<span>Conflicts</span>
+											{:else if isUnknown}
+												<AlertCircle size={12} />
+												<span>Checking</span>
+											{:else}
+												<CheckCircle size={12} />
+												<span>Mergeable</span>
+											{/if}
+										</div>
+										<!-- Merge Button -->
+										{#if data.session}
+											<button
+												onclick={(e) => {
+													e.preventDefault();
+													mergePR(pr.number);
+												}}
+												disabled={mergingIds.has(pr.number) || pr.mergeable !== 'MERGEABLE'}
+												title={isConflicting ? 'Has conflicts' : isUnknown ? 'Checking mergeability' : 'Merge PR'}
+												class="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500/20 border border-green-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+											>
+												<GitMerge size={14} class={mergingIds.has(pr.number) ? 'animate-spin' : ''} />
+												<span class="hidden sm:inline">{mergingIds.has(pr.number) ? 'Merging...' : 'Merge'}</span>
+											</button>
+										{/if}
+										<div
+											class={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide uppercase border ${getStatusColorClasses(pr.status)}`}
+											title={pr.status}
+										>
+											<PrStatusIcon size={14} />
+											<span class="hidden sm:inline">{pr.status}</span>
+										</div>
+									</div>
+								</div>
+
+								<!-- Assignees -->
+								{#if pr.assignees && pr.assignees.length > 0}
+									<div class="flex items-center gap-1.5">
+										<User size={14} class="text-text-secondary-light dark:text-text-secondary-dark" />
+										{#each pr.assignees as assignee}
+											<img
+												src={assignee.avatarUrl}
+												alt={assignee.login}
+												title={assignee.login}
+												class="w-5 h-5 rounded-full border border-border-light dark:border-border-dark"
+											/>
+										{/each}
+									</div>
+								{/if}
+
+								<!-- Checks -->
+								{#if pr.checks && pr.checks.length > 0}
+									<div
+										class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-3 border-t border-border-light/50 dark:border-border-dark/50"
+									>
+										{#each pr.checks as check}
+											{@const CheckIcon = getStatusIcon(check.status)}
+											<div
+												class="flex items-center justify-between text-[13px] bg-black/5 dark:bg-white/5 border border-border-light/50 dark:border-border-dark/50 px-3 py-2 rounded-lg"
+											>
+												<div class="flex items-center gap-2 min-w-0">
+													<CheckIcon
+														size={14}
+														class={check.status === 'success'
+															? 'text-green-500 dark:text-green-400'
+															: check.status === 'failure' || check.status === 'timed_out'
+																? 'text-red-500 dark:text-red-400'
+																: check.status === 'cancelled'
+																	? 'text-gray-500 dark:text-gray-400'
+																	: 'text-yellow-500 dark:text-yellow-400'}
+													/>
+													<span class="text-text-primary-light dark:text-text-primary-dark truncate text-xs">{check.name}</span>
+												</div>
+												{#if data.session && (check.status === 'failure' || check.status === 'timed_out' || check.status === 'cancelled') && check.id}
+													<button
+														onclick={(e) => {
+															e.preventDefault();
+															rerunWorkflow(check.id, 'failed');
+														}}
+														disabled={rerunningIds.has(String(check.id))}
+														class="ml-2 p-1 text-text-secondary-light hover:text-cyan-600 dark:text-text-secondary-dark dark:hover:text-cyan-400 bg-white dark:bg-black rounded border border-border-light dark:border-border-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+														title="Rerun failed jobs"
+													>
+														<RefreshCw size={12} class={rerunningIds.has(String(check.id)) ? 'animate-spin' : ''} />
+													</button>
+												{/if}
+											</div>
+										{/each}
+									</div>
+								{/if}
+							</div>
+						{/each}
+					</div>
+
+					{#if pullsPageInfo.hasNextPage}
+						<div bind:this={observerTarget} class="h-20 flex items-center justify-center mt-6">
+							<Loader2 class="w-6 h-6 animate-spin text-cyan-500" />
+						</div>
+					{/if}
+				{:else if !loadingPulls}
+					<div
+						class="bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-2xl p-8 text-center text-text-secondary-light dark:text-text-secondary-dark"
+					>
+						<p>No open pull requests.</p>
+					</div>
+				{:else}
+					<div class="h-20 flex items-center justify-center mt-6">
+						<Loader2 class="w-6 h-6 animate-spin text-cyan-500" />
+					</div>
+				{/if}
+			</section>
+		{:else if activeTab === 'issues'}
+			<!-- Issues Section -->
+			<section class="animate-in fade-in slide-in-from-bottom-4 duration-500">
+				{#if issues && issues.length > 0}
+					<div class="flex flex-col gap-4">
+						{#each issues as issue}
+							<div
+								class="glass-card rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4"
+							>
+								<!-- Issue Header -->
+								<div class="flex justify-between items-start gap-4">
+									<div class="flex flex-col gap-1.5 min-w-0 flex-1">
+										<a
+											href={issue.url}
+											target="_blank"
+											rel="noopener noreferrer"
+											class="text-[15px] font-medium text-text-primary-light dark:text-text-primary-dark hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors truncate"
+											title={issue.title}
+										>
+											{issue.title}
+										</a>
+										<div
+											class="flex items-center gap-3 text-[13px] text-text-secondary-light dark:text-text-secondary-dark flex-wrap"
+										>
+											<span class="font-mono bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-border-light dark:border-border-dark"
+												>#{issue.number}</span
+											>
+											{#if issue.author}
+												<a
+													href={issue.author.url}
+													target="_blank"
+													rel="noopener noreferrer"
+													class="flex items-center gap-1.5 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
+												>
+													<img
+														src={issue.author.avatarUrl}
+														alt={issue.author.login}
+														class="w-4 h-4 rounded-full"
+													/>
+													<span>{issue.author.login}</span>
+												</a>
+											{/if}
+											<span class="flex items-center gap-1"
+												><Clock size={13} /> {formatDate(issue.createdAt)}</span
+											>
+										</div>
+										<!-- Labels -->
+										{#if issue.labels && issue.labels.length > 0}
+											<div class="flex flex-wrap gap-1.5 mt-1">
+												{#each issue.labels as label}
+													<span
+														class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border"
+														style="background-color: #{label.color}20; border-color: #{label.color}40; color: #{label.color === 'ffffff' ? 'currentColor' : '#' + label.color}"
+														title={label.description || label.name}
+													>
+														{label.name}
+													</span>
+												{/each}
+											</div>
+										{/if}
+									</div>
+
+									<!-- Close Button -->
+									{#if data.session}
+										<button
+											onclick={(e) => {
+												e.preventDefault();
+												closeIssue(issue.number);
+											}}
+											disabled={closingIds.has(issue.number)}
+											class="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+											title="Close issue"
+										>
+											<XCircle size={14} class={closingIds.has(issue.number) ? 'animate-spin' : ''} />
+											<span class="hidden sm:inline">{closingIds.has(issue.number) ? 'Closing...' : 'Close'}</span>
+										</button>
+									{/if}
+								</div>
+
+								<!-- Assignees -->
+								{#if issue.assignees && issue.assignees.length > 0}
+									<div class="flex items-center gap-1.5">
+										<User size={14} class="text-text-secondary-light dark:text-text-secondary-dark" />
+										{#each issue.assignees as assignee}
+											<img
+												src={assignee.avatarUrl}
+												alt={assignee.login}
+												title={assignee.login}
+												class="w-5 h-5 rounded-full border border-border-light dark:border-border-dark"
+											/>
+										{/each}
+									</div>
+								{/if}
+							</div>
+						{/each}
+					</div>
+
+					{#if issuesPageInfo.hasNextPage}
+						<div bind:this={observerTarget} class="h-20 flex items-center justify-center mt-6">
+							<Loader2 class="w-6 h-6 animate-spin text-cyan-500" />
+						</div>
+					{/if}
+				{:else if !loadingIssues}
+					<div
+						class="bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-2xl p-8 text-center text-text-secondary-light dark:text-text-secondary-dark"
+					>
+						<p>No open issues.</p>
+					</div>
+				{:else}
+					<div class="h-20 flex items-center justify-center mt-6">
+						<Loader2 class="w-6 h-6 animate-spin text-cyan-500" />
 					</div>
 				{/if}
 			</section>

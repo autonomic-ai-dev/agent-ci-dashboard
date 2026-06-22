@@ -316,7 +316,8 @@ export async function load(event) {
 			releasesPageInfo,
 			commits,
 			commitsPageInfo,
-			repoUrl: `https://github.com/${owner}/${repo}`
+			repoUrl: `https://github.com/${owner}/${repo}`,
+			session: session ? { user: session.user } : null
 		};
 	} catch (e) {
 		console.error(`Failed to load details for ${repo} via GraphQL:`, e);
