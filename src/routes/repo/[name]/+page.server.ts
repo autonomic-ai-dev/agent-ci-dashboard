@@ -50,6 +50,12 @@ export async function load(event) {
 		const query = `
 			query getRepoDetails($owner: String!, $repo: String!) {
 				repository(owner: $owner, name: $repo) {
+					openPulls: pullRequests(states: OPEN) {
+						totalCount
+					}
+					openIssues: issues(states: OPEN) {
+						totalCount
+					}
 					readme: object(expression: "HEAD:README.md") {
 						... on Blob {
 							text
@@ -317,7 +323,9 @@ export async function load(event) {
 			commits,
 			commitsPageInfo,
 			repoUrl: `https://github.com/${owner}/${repo}`,
-			session: session ? { user: session.user } : null
+			session: session ? { user: session.user } : null,
+			pullCount: repoData.openPulls?.totalCount ?? 0,
+			issueCount: repoData.openIssues?.totalCount ?? 0
 		};
 	} catch (e) {
 		console.error(`Failed to load details for ${repo} via GraphQL:`, e);

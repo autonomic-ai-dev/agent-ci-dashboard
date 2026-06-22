@@ -77,10 +77,10 @@
 	});
 
 	$effect(() => {
-		if (activeTab === 'pulls' && pulls.length === 0) {
+		if (activeTab === 'pulls' && pulls.length === 0 && (data.pullCount ?? 0) > 0) {
 			loadPulls();
 		}
-		if (activeTab === 'issues' && issues.length === 0) {
+		if (activeTab === 'issues' && issues.length === 0 && (data.issueCount ?? 0) > 0) {
 			loadIssues();
 		}
 	});
