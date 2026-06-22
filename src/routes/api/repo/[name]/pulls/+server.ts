@@ -75,6 +75,7 @@ export async function GET(event) {
 												updatedAt
 												workflowRun {
 													databaseId
+													url
 													workflow {
 														name
 													}
@@ -168,6 +169,7 @@ export async function GET(event) {
 				checks: latestUniqueRuns.map((run: any) => ({
 					id: run.workflowRun?.databaseId || null,
 					name: run.workflowRun?.workflow?.name || 'Workflow',
+					url: run.workflowRun?.url,
 					status:
 						run.status !== 'COMPLETED'
 							? run.status.toLowerCase()
