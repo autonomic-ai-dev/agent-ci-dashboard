@@ -359,6 +359,8 @@
 			case 'cancelled':
 				return AlertCircle;
 			case 'pending':
+			case 'queued':
+			case 'in_progress':
 				return Clock;
 			default:
 				return AlertCircle;
@@ -374,6 +376,8 @@
 			case 'cancelled':
 				return 'text-gray-500 dark:text-gray-400 bg-gray-500/10 border-gray-500/20';
 			case 'pending':
+			case 'queued':
+			case 'in_progress':
 				return 'text-yellow-600 dark:text-yellow-400 bg-yellow-500/10 border-yellow-500/20';
 			default:
 				return 'text-gray-500 dark:text-gray-400 bg-gray-500/10 border-gray-500/20';

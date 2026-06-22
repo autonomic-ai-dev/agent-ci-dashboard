@@ -126,7 +126,6 @@ export async function GET(event) {
 			if (latestUniqueRuns.length === 0) {
 				overallStatus = 'no-checks';
 			} else {
-				const isPending = latestUniqueRuns.some((run: any) => run.status !== 'COMPLETED');
 				const hasFailure = latestUniqueRuns.some(
 					(run: any) =>
 						run.status === 'COMPLETED' &&
@@ -137,10 +136,13 @@ export async function GET(event) {
 				const hasCancelled = latestUniqueRuns.some(
 					(run: any) => run.status === 'COMPLETED' && run.conclusion === 'CANCELLED'
 				);
+				const isInProgress = latestUniqueRuns.some((run: any) => run.status === 'IN_PROGRESS');
+				const isQueued = latestUniqueRuns.some((run: any) => run.status === 'QUEUED');
 
 				if (hasFailure) overallStatus = 'failure';
 				else if (hasCancelled) overallStatus = 'cancelled';
-				else if (isPending) overallStatus = 'pending';
+				else if (isInProgress) overallStatus = 'in_progress';
+				else if (isQueued) overallStatus = 'queued';
 				else overallStatus = 'success';
 			}
 
