@@ -76,11 +76,16 @@
 		commitsPageInfo = data.commitsPageInfo || { hasNextPage: false, endCursor: null };
 	});
 
+	let pullsLoaded = $state(false);
+	let issuesLoaded = $state(false);
+
 	$effect(() => {
-		if (activeTab === 'pulls' && pulls.length === 0 && (data.pullCount ?? 0) > 0) {
+		if (activeTab === 'pulls' && !pullsLoaded && (data.pullCount ?? 0) > 0) {
+			pullsLoaded = true;
 			loadPulls();
 		}
-		if (activeTab === 'issues' && issues.length === 0 && (data.issueCount ?? 0) > 0) {
+		if (activeTab === 'issues' && !issuesLoaded && (data.issueCount ?? 0) > 0) {
+			issuesLoaded = true;
 			loadIssues();
 		}
 	});
