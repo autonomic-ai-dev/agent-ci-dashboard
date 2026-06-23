@@ -40,6 +40,7 @@ export async function GET(event) {
 						nodes {
 							number
 							title
+							isDraft
 							url
 							createdAt
 							updatedAt
@@ -149,6 +150,7 @@ export async function GET(event) {
 			return {
 				number: pr.number,
 				title: pr.title,
+				isDraft: pr.isDraft,
 				url: pr.url,
 				createdAt: pr.createdAt,
 				updatedAt: pr.updatedAt,
