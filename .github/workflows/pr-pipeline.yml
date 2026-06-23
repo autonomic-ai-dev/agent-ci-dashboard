@@ -10,21 +10,8 @@ concurrency:
 
 permissions:
   contents: read
-  actions: write
-  statuses: write
 
 jobs:
-  run-pipeline:
-    name: Validate PR
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.head_ref }}
-
-      - uses: aeswibon/pipeline-compose-run@v1.17.1
-        with:
-          pipeline_file: .github/pipelines/deploy.yml
-          pipeline_name: pr
-          ref: ${{ github.head_ref }}
-          github_token: ${{ github.token }}
+  ci:
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
