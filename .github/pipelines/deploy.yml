@@ -4,19 +4,6 @@ companion_workflows:
   - .github/workflows/ci.yml
 
 pipelines:
-  pr:
-    stages:
-      - id: pr-build-backend
-        workflow: .github/workflows/deploy-build-backend.yml
-
-      - id: pr-build-frontend
-        workflow: .github/workflows/deploy-build-frontend.yml
-
-      - id: pr-docker-publish
-        workflow: .github/workflows/deploy-docker-publish.yml
-        needs:
-          - pr-build-backend
-
   deploy:
     stages:
       - id: build-backend
@@ -36,18 +23,10 @@ pipelines:
         inputs:
           push: "true"
 
-      - id: migrate-db
-        workflow: .github/workflows/deploy-migrate-db.yml
-        needs:
-          - build-backend
-        inputs:
-          artifact_sha: ${{ context.build-backend.artifact_sha }}
-
       - id: deploy-gcp
         workflow: .github/workflows/deploy-gcp.yml
         needs:
           - build-backend
-          - migrate-db
         inputs:
           artifact_sha: ${{ context.build-backend.artifact_sha }}
 
