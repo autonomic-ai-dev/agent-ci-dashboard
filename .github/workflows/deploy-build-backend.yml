@@ -1,0 +1,50 @@
+name: Build Backend
+on:
+  workflow_dispatch:
+    inputs:
+      artifact_sha:
+        description: "Upstream artifact checksum"
+        type: string
+        required: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install protoc
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: x86_64-unknown-linux-gnu
+          cache: true
+
+      - name: Build release
+        run: cargo build --release --workspace
+
+      - name: Checksum
+        id: sha
+        run: |
+          echo "artifact_sha=$(sha256sum target/release/github-ingestor | head -c 16)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v7
+        with:
+          name: rust-binaries
+          path: |
+            target/release/github-ingestor
+            target/release/insights-api
+          retention-days: 1
+
+      - uses: aeswibon/pipeline-compose-export@v1.17.1
+        if: success()
+        with:
+          stage_id: build-backend
+          outputs: >-
+            {"artifact_sha":"${{ steps.sha.outputs.artifact_sha }}"}

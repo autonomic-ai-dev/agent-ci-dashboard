@@ -1,0 +1,42 @@
+version: 2
+
+companion_workflows:
+  - .github/workflows/ci.yml
+
+pipelines:
+  deploy:
+    stages:
+      - id: build-backend
+        workflow: .github/workflows/deploy-build-backend.yml
+        outputs:
+          - artifact_sha
+
+      - id: build-frontend
+        workflow: .github/workflows/deploy-build-frontend.yml
+
+      - id: docker-publish
+        workflow: .github/workflows/deploy-docker-publish.yml
+        needs:
+          - build-backend
+        outputs:
+          - image_tag
+        inputs:
+          push: "true"
+
+      - id: deploy-gcp
+        workflow: .github/workflows/deploy-gcp.yml
+        needs:
+          - docker-publish
+        inputs:
+          image_tag: ${{ context.docker-publish.image_tag }}
+
+      - id: deploy-vercel
+        workflow: .github/workflows/deploy-vercel.yml
+        needs:
+          - build-frontend
+
+      - id: smoke-test
+        workflow: .github/workflows/deploy-smoke-test.yml
+        needs:
+          - deploy-gcp
+          - deploy-vercel

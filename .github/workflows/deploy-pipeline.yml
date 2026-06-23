@@ -1,0 +1,26 @@
+name: Deploy Pipeline
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: write
+  statuses: write
+
+jobs:
+  run-pipeline:
+    name: Orchestrate Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: aeswibon/pipeline-compose-run@v1.17.1
+        with:
+          pipeline_file: .github/pipelines/deploy.yml
+          github_token: ${{ github.token }}

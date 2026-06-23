@@ -1,0 +1,191 @@
+syntax = "proto3";
+
+package insights.v1;
+
+import "insights/v1/types.proto";
+
+service InsightsService {
+  // Org-wide overview
+  rpc GetOrgStatus(Empty) returns (OrgStatusResponse);
+
+  // PRs
+  rpc GetOrgPulls(OrgPullsRequest) returns (OrgPullsResponse);
+  rpc GetRepoPulls(RepoPullsRequest) returns (RepoPullsResponse);
+
+  // Issues
+  rpc GetOrgIssues(OrgIssuesRequest) returns (OrgIssuesResponse);
+  rpc GetRepoIssues(RepoIssuesRequest) returns (RepoIssuesResponse);
+
+  // CI
+  rpc GetWorkflowHistory(WorkflowHistoryRequest) returns (WorkflowHistoryResponse);
+  rpc GetWorkflowLogs(WorkflowLogsRequest) returns (stream LogChunk);
+
+  // Releases and commits
+  rpc GetReleases(ReleasesRequest) returns (ReleasesResponse);
+  rpc GetCommits(CommitsRequest) returns (CommitsResponse);
+  rpc GetReadme(ReadmeRequest) returns (ReadmeResponse);
+
+  // Mutations
+  rpc MergePullRequest(MergePullRequestRequest) returns (MergePullRequestResponse);
+  rpc CloseIssue(CloseIssueRequest) returns (CloseIssueResponse);
+  rpc RerunWorkflow(RerunWorkflowRequest) returns (RerunWorkflowResponse);
+
+  // Aggregated metrics
+  rpc GetDoraMetrics(DoraRequest) returns (DoraResponse);
+  rpc GetCiTrends(CiTrendsRequest) returns (CiTrendsResponse);
+}
+
+message OrgStatusResponse {
+  repeated Repository repositories = 1;
+}
+
+message OrgPullsRequest {
+  int32 per_repo = 1;
+}
+
+message OrgPullsResponse {
+  repeated PullRequest pull_requests = 1;
+  map<string, int32> totals = 2;
+}
+
+message RepoPullsRequest {
+  string repo = 1;
+  int32 first = 2;
+  string after = 3;
+}
+
+message RepoPullsResponse {
+  repeated PullRequest pull_requests = 1;
+  PageInfo page_info = 2;
+}
+
+message OrgIssuesRequest {
+  int32 per_repo = 1;
+}
+
+message OrgIssuesResponse {
+  repeated Issue issues = 1;
+  map<string, int32> totals = 2;
+}
+
+message RepoIssuesRequest {
+  string repo = 1;
+  int32 first = 2;
+  string after = 3;
+}
+
+message RepoIssuesResponse {
+  repeated Issue issues = 1;
+  PageInfo page_info = 2;
+}
+
+message WorkflowHistoryRequest {
+  string repo = 1;
+  int32 first = 2;
+  string after = 3;
+}
+
+message WorkflowHistoryResponse {
+  repeated WorkflowRun runs = 1;
+  PageInfo page_info = 2;
+}
+
+message WorkflowLogsRequest {
+  int64 run_id = 1;
+}
+
+message LogChunk {
+  bytes data = 1;
+}
+
+message ReleasesRequest {
+  string repo = 1;
+  int32 first = 2;
+  string after = 3;
+}
+
+message ReleasesResponse {
+  repeated Release releases = 1;
+  PageInfo page_info = 2;
+}
+
+message CommitsRequest {
+  string repo = 1;
+  int32 first = 2;
+  string after = 3;
+}
+
+message CommitsResponse {
+  repeated Commit commits = 1;
+  PageInfo page_info = 2;
+}
+
+message ReadmeRequest {
+  string repo = 1;
+}
+
+message ReadmeResponse {
+  string content = 1;
+  string html = 2;
+  int64 updated_at = 3;
+}
+
+message MergePullRequestRequest {
+  string repo = 1;
+  int32 pull_number = 2;
+}
+
+message MergePullRequestResponse {
+  bool merged = 1;
+  string sha = 2;
+  string message = 3;
+}
+
+message CloseIssueRequest {
+  string repo = 1;
+  int32 issue_number = 2;
+}
+
+message CloseIssueResponse {
+  bool closed = 1;
+}
+
+message RerunWorkflowRequest {
+  string repo = 1;
+  int64 run_id = 2;
+  bool failed_only = 3;
+}
+
+message RerunWorkflowResponse {
+  bool triggered = 1;
+  int64 new_run_id = 2;
+}
+
+message DoraRequest {
+  string repo = 1;
+  int32 days = 2;
+}
+
+message DoraResponse {
+  double deployment_frequency = 1;
+  double lead_time_for_change_seconds = 2;
+  double change_failure_rate = 3;
+  double time_to_restore_seconds = 4;
+}
+
+message CiTrendsRequest {
+  string repo = 1;
+  int32 days = 2;
+}
+
+message CiTrendsPoint {
+  string date = 1;
+  int32 total_runs = 2;
+  int32 successful_runs = 3;
+  double success_rate = 4;
+  double avg_duration_seconds = 5;
+}
+
+message CiTrendsResponse {
+  repeated CiTrendsPoint points = 1;
+}

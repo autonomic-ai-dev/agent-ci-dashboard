@@ -21,8 +21,17 @@
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import mermaid from 'mermaid';
+	import { getInsightsClient } from '$lib/grpc';
 
 	let { data } = $props();
+
+	let client: any;
+	$effect(() => {
+		const token = (data.session as { accessToken?: string } | null)?.accessToken;
+		if (token) {
+			client = getInsightsClient(token);
+		}
+	});
 
 	type Tab = 'readme' | 'releases' | 'runs' | 'pulls' | 'issues';
 	let activeTab = $derived.by<Tab>(() => {
@@ -78,9 +87,16 @@
 		}, 4000);
 	}
 
-	let rerunningIds = $state<Set<string>>(new Set());
-	let mergingIds = $state<Set<number>>(new Set());
-	let closingIds = $state<Set<number>>(new Set());
+	// Custom confirm dialog
+	let confirmDialog = $state<{ message: string; onConfirm: () => void } | null>(null);
+
+	function showConfirm(message: string, onConfirm: () => void) {
+		confirmDialog = { message, onConfirm };
+	}
+
+	let rerunningIds = $state<Record<string, boolean>>({});
+	let mergingPullNumber = $state<number | null>(null);
+	let closingIssueNumber = $state<number | null>(null);
 
 	$effect(() => {
 		releases = data.releases || [];
@@ -114,13 +130,13 @@
 		terminalLoading = true;
 
 		try {
-			const res = await fetch(`/api/repo/${data.repo}/logs?run_id=${runId}`);
-			const json = await res.json();
-			if (json.success) {
-				terminalLogs = json.logs;
-			} else {
-				terminalLogs = `Error: ${json.error}`;
+			if (!client) return;
+			const stream = client.getWorkflowLogs({ runId: Number(runId) });
+			let logs = '';
+			for await (const chunk of stream) {
+				logs += new TextDecoder().decode(chunk.data);
 			}
+			terminalLogs = logs || 'No logs available.';
 		} catch (e) {
 			terminalLogs = 'Failed to fetch logs.';
 		} finally {
@@ -129,17 +145,12 @@
 	}
 
 	async function rerunWorkflow(runId: string, type: 'all' | 'failed' = 'failed') {
-		rerunningIds.add(runId);
-		rerunningIds = new Set(rerunningIds);
+		rerunningIds = { ...rerunningIds, [runId]: true };
 
 		try {
-			const response = await fetch(`/api/repo/${data.repo}/run`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ runId, type })
-			});
+			const res = await client.rerunWorkflow({ repo: data.repo, runId: Number(runId), failedOnly: type === 'failed' });
 
-			if (response.ok) {
+			if (res.triggered) {
 				addToast('Rerun triggered', 'success');
 				if (activeTab === 'pulls') {
 					pulls = [];
@@ -152,27 +163,25 @@
 				}
 				if (terminalOpen) terminalOpen = false;
 			} else {
-				const res = await response.json();
-				addToast(res.error || 'Failed to trigger rerun', 'error');
+				addToast('Failed to trigger rerun', 'error');
 			}
 		} catch (error) {
 			console.error('Error triggering rerun:', error);
 			addToast('Network error while triggering rerun', 'error');
 		} finally {
-			rerunningIds.delete(runId);
-			rerunningIds = new Set(rerunningIds);
+			const next = { ...rerunningIds };
+			delete next[runId];
+			rerunningIds = next;
 		}
 	}
 
 	async function loadCommitsFromApi() {
+		if (!client) return;
 		loadingCommits = true;
 		try {
-			const res = await fetch(`/api/repo/${data.repo}/history?type=commits`);
-			const json = await res.json();
-			if (json.success) {
-				commits = json.data;
-				commitsPageInfo = json.pageInfo;
-			}
+			const res = await client.getWorkflowHistory({ repo: data.repo, first: 20 });
+			commits = res.runs as any;
+			commitsPageInfo = res.pageInfo as any;
 		} catch (e) {
 			console.error('Failed to reload commits', e);
 		} finally {
@@ -181,16 +190,12 @@
 	}
 
 	async function loadPulls(after?: string) {
-		if (loadingPulls) return;
+		if (loadingPulls || !client) return;
 		loadingPulls = true;
 		try {
-			const params = after ? `?after=${after}` : '';
-			const res = await fetch(`/api/repo/${data.repo}/pulls${params}`);
-			const json = await res.json();
-			if (json.success) {
-				pulls = after ? [...pulls, ...json.data] : json.data;
-				pullsPageInfo = json.pageInfo;
-			}
+			const res = await client.getRepoPulls({ repo: data.repo, first: 20, after: after || '' });
+			pulls = after ? [...pulls, ...(res.pullRequests as any)] : (res.pullRequests as any);
+			pullsPageInfo = res.pageInfo as any;
 		} catch (e) {
 			console.error('Failed to fetch PRs', e);
 		} finally {
@@ -199,16 +204,12 @@
 	}
 
 	async function loadIssues(after?: string) {
-		if (loadingIssues) return;
+		if (loadingIssues || !client) return;
 		loadingIssues = true;
 		try {
-			const params = after ? `?after=${after}` : '';
-			const res = await fetch(`/api/repo/${data.repo}/issues${params}`);
-			const json = await res.json();
-			if (json.success) {
-				issues = after ? [...issues, ...json.data] : json.data;
-				issuesPageInfo = json.pageInfo;
-			}
+			const res = await client.getRepoIssues({ repo: data.repo, first: 20, after: after || '' });
+			issues = after ? [...issues, ...(res.issues as any)] : (res.issues as any);
+			issuesPageInfo = res.pageInfo as any;
 		} catch (e) {
 			console.error('Failed to fetch issues', e);
 		} finally {
@@ -217,59 +218,47 @@
 	}
 
 	async function mergePR(pullNumber: number) {
-		if (!confirm('Merge this pull request?')) return;
-		mergingIds.add(pullNumber);
-		mergingIds = new Set(mergingIds);
+		showConfirm('Merge this pull request?', async () => {
+			mergingPullNumber = pullNumber;
 
-		try {
-			const res = await fetch(`/api/repo/${data.repo}/pulls/merge`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ pullNumber })
-			});
+			try {
+				const res = await client.mergePullRequest({ repo: data.repo, pullNumber });
 
-			if (res.ok) {
-				pulls = pulls.filter((pr) => pr.number !== pullNumber);
-				addToast(`PR #${pullNumber} merged`, 'success');
-			} else {
-				const json = await res.json();
-				addToast(json.error || 'Failed to merge PR', 'error');
+				if (res.merged) {
+					pulls = pulls.filter((pr) => pr.number !== pullNumber);
+					addToast(`PR #${pullNumber} merged`, 'success');
+				} else {
+					addToast(res.message || 'Failed to merge PR', 'error');
+				}
+			} catch (e) {
+				console.error('Error merging PR:', e);
+				addToast('Network error while merging', 'error');
+			} finally {
+				mergingPullNumber = null;
 			}
-		} catch (e) {
-			console.error('Error merging PR:', e);
-			addToast('Network error while merging', 'error');
-		} finally {
-			mergingIds.delete(pullNumber);
-			mergingIds = new Set(mergingIds);
-		}
+		});
 	}
 
 	async function closeIssue(issueNumber: number) {
-		if (!confirm('Close this issue?')) return;
-		closingIds.add(issueNumber);
-		closingIds = new Set(closingIds);
+		showConfirm('Close this issue?', async () => {
+			closingIssueNumber = issueNumber;
 
-		try {
-			const res = await fetch(`/api/repo/${data.repo}/issues/close`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ issueNumber })
-			});
+			try {
+				const res = await client.closeIssue({ repo: data.repo, issueNumber });
 
-			if (res.ok) {
-				issues = issues.filter((issue) => issue.number !== issueNumber);
-				addToast(`Issue #${issueNumber} closed`, 'success');
-			} else {
-				const json = await res.json();
-				addToast(json.error || 'Failed to close issue', 'error');
+				if (res.closed) {
+					issues = issues.filter((issue) => issue.number !== issueNumber);
+					addToast(`Issue #${issueNumber} closed`, 'success');
+				} else {
+					addToast('Failed to close issue', 'error');
+				}
+			} catch (e) {
+				console.error('Error closing issue:', e);
+				addToast('Network error while closing issue', 'error');
+			} finally {
+				closingIssueNumber = null;
 			}
-		} catch (e) {
-			console.error('Error closing issue:', e);
-			addToast('Network error while closing issue', 'error');
-		} finally {
-			closingIds.delete(issueNumber);
-			closingIds = new Set(closingIds);
-		}
+		});
 	}
 
 	// Load more function
@@ -277,14 +266,9 @@
 		if (activeTab === 'releases' && releasesPageInfo.hasNextPage && !loadingReleases) {
 			loadingReleases = true;
 			try {
-				const res = await fetch(
-					`/api/repo/${data.repo}/history?type=releases&after=${releasesPageInfo.endCursor}`
-				);
-				const json = await res.json();
-				if (json.success) {
-					releases = [...releases, ...json.data];
-					releasesPageInfo = json.pageInfo;
-				}
+				const res = await client.getReleases({ repo: data.repo, first: 20, after: releasesPageInfo.endCursor });
+				releases = [...releases, ...(res.releases as any)];
+				releasesPageInfo = res.pageInfo as any;
 			} catch (e) {
 				console.error('Failed to load more releases', e);
 			} finally {
@@ -293,14 +277,9 @@
 		} else if (activeTab === 'runs' && commitsPageInfo.hasNextPage && !loadingCommits) {
 			loadingCommits = true;
 			try {
-				const res = await fetch(
-					`/api/repo/${data.repo}/history?type=commits&after=${commitsPageInfo.endCursor}`
-				);
-				const json = await res.json();
-				if (json.success) {
-					commits = [...commits, ...json.data];
-					commitsPageInfo = json.pageInfo;
-				}
+				const res = await client.getWorkflowHistory({ repo: data.repo, first: 20, after: commitsPageInfo.endCursor });
+				commits = [...commits, ...(res.runs as any)];
+				commitsPageInfo = res.pageInfo as any;
 			} catch (e) {
 				console.error('Failed to load more commits', e);
 			} finally {
@@ -790,11 +769,11 @@
 															e.preventDefault();
 															rerunWorkflow(run.id, 'failed');
 														}}
-														disabled={rerunningIds.has(String(run.id))}
+														disabled={rerunningIds[String(run.id)]}
 														class="opacity-0 group-hover:opacity-100 p-1.5 text-text-secondary-light hover:text-cyan-600 dark:text-text-secondary-dark dark:hover:text-cyan-400 bg-white dark:bg-black rounded border border-border-light dark:border-border-dark shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
 														title="Rerun failed jobs"
 													>
-														<RefreshCw size={12} class={rerunningIds.has(String(run.id)) ? 'animate-spin' : ''} />
+														<RefreshCw size={12} class={rerunningIds[String(run.id)] ? 'animate-spin' : ''} />
 													</button>
 												{/if}
 											</div>
@@ -917,12 +896,12 @@
 													e.preventDefault();
 													mergePR(pr.number);
 												}}
-												disabled={mergingIds.has(pr.number) || pr.mergeable !== 'MERGEABLE'}
+												disabled={mergingPullNumber === pr.number || pr.mergeable !== 'MERGEABLE' || pr.status !== 'success'}
 												title={isConflicting ? 'Has conflicts' : isUnknown ? 'Checking mergeability' : 'Merge PR'}
 												class="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500/20 border border-green-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 											>
-												<GitMerge size={14} class={mergingIds.has(pr.number) ? 'animate-spin' : ''} />
-												<span class="hidden sm:inline">{mergingIds.has(pr.number) ? 'Merging...' : 'Merge'}</span>
+												<GitMerge size={14} class={mergingPullNumber === pr.number ? 'animate-spin' : ''} />
+												<span class="hidden sm:inline">{mergingPullNumber === pr.number ? 'Merging...' : 'Merge'}</span>
 											</button>
 										{/if}
 										<div
@@ -1016,11 +995,11 @@
 															e.preventDefault();
 															rerunWorkflow(check.id, 'failed');
 														}}
-														disabled={rerunningIds.has(String(check.id))}
+														disabled={rerunningIds[String(check.id)]}
 														class="opacity-0 group-hover:opacity-100 p-1.5 text-text-secondary-light hover:text-cyan-600 dark:text-text-secondary-dark dark:hover:text-cyan-400 bg-white dark:bg-black rounded border border-border-light dark:border-border-dark shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
 														title="Rerun failed jobs"
 													>
-														<RefreshCw size={12} class={rerunningIds.has(String(check.id)) ? 'animate-spin' : ''} />
+														<RefreshCw size={12} class={rerunningIds[String(check.id)] ? 'animate-spin' : ''} />
 													</button>
 												{/if}
 											</div>
@@ -1117,12 +1096,12 @@
 												e.preventDefault();
 												closeIssue(issue.number);
 											}}
-											disabled={closingIds.has(issue.number)}
+											disabled={closingIssueNumber === issue.number}
 											class="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
 											title="Close issue"
 										>
-											<XCircle size={14} class={closingIds.has(issue.number) ? 'animate-spin' : ''} />
-											<span class="hidden sm:inline">{closingIds.has(issue.number) ? 'Closing...' : 'Close'}</span>
+											<XCircle size={14} class={closingIssueNumber === issue.number ? 'animate-spin' : ''} />
+											<span class="hidden sm:inline">{closingIssueNumber === issue.number ? 'Closing...' : 'Close'}</span>
 										</button>
 									{/if}
 								</div>
@@ -1188,11 +1167,11 @@
 								e.preventDefault();
 								rerunWorkflow(terminalRunId, 'failed');
 							}}
-							disabled={rerunningIds.has(terminalRunId)}
+							disabled={rerunningIds[terminalRunId]}
 							class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 							title="Rerun Failed Jobs"
 						>
-							<RefreshCw size={12} class={rerunningIds.has(terminalRunId) ? 'animate-spin' : ''} />
+							<RefreshCw size={12} class={rerunningIds[terminalRunId] ? 'animate-spin' : ''} />
 							<span>Rerun Failed</span>
 						</button>
 					{/if}
@@ -1217,6 +1196,49 @@
 				{:else}
 					<pre class="whitespace-pre-wrap break-words m-0">{terminalLogs}</pre>
 				{/if}
+			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- Confirm dialog -->
+{#if confirmDialog}
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div
+		class="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+		role="dialog"
+		aria-modal="true"
+		tabindex="-1"
+		onclick={() => (confirmDialog = null)}
+		onkeydown={(e) => e.key === 'Escape' && (confirmDialog = null)}
+	>
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div
+			class="bg-bg-light dark:bg-bg-dark border border-border-light dark:border-border-dark rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4"
+			role="none"
+			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
+		>
+			<p class="text-text-primary-light dark:text-text-primary-dark font-medium mb-6 text-center">
+				{confirmDialog.message}
+			</p>
+			<div class="flex gap-3 justify-center">
+				<button
+					onclick={() => {
+						const action = confirmDialog!.onConfirm;
+						confirmDialog = null;
+						action();
+					}}
+					class="px-6 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-medium transition-colors"
+				>
+					Confirm
+				</button>
+				<button
+					onclick={() => (confirmDialog = null)}
+					class="px-6 py-2 rounded-xl bg-surface-light dark:bg-surface-dark hover:bg-border-light dark:hover:bg-border-dark text-text-secondary-light dark:text-text-secondary-dark font-medium transition-colors"
+				>
+					Cancel
+				</button>
 			</div>
 		</div>
 	</div>
