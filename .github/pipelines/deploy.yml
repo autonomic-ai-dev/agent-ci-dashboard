@@ -46,10 +46,10 @@ pipelines:
       - id: deploy-gcp
         workflow: .github/workflows/deploy-gcp.yml
         needs:
-          - docker-publish
+          - build-backend
           - migrate-db
         inputs:
-          image_tag: ${{ context.docker-publish.image_tag }}
+          artifact_sha: ${{ context.build-backend.artifact_sha }}
 
       - id: deploy-vercel
         workflow: .github/workflows/deploy-vercel.yml
