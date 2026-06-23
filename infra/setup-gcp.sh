@@ -7,7 +7,7 @@ set -euo pipefail
 # Region: us-east1 (keep all services colocated)
 # ============================================
 
-PROJECT_ID="${GCP_PROJECT_ID:-autonomic-ai}"
+PROJECT_ID="${GCP_PROJECT_ID?Set GCP_PROJECT_ID}"
 ZONE="${GCP_ZONE:-us-east1-b}"
 INSTANCE_NAME="${GCP_INSTANCE:-agent-ci-backend}"
 SERVICE_ACCOUNT="github-actions-deployer"

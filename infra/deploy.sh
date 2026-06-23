@@ -6,9 +6,9 @@ set -euo pipefail
 # Builds Rust binaries and deploys to GCP
 # ============================================
 
-PROJECT_ID="${GCP_PROJECT_ID:-autonomic-ai}"
-ZONE="${GCP_ZONE:-us-east1-b}"
-INSTANCE="${GCP_INSTANCE:-agent-ci-backend}"
+PROJECT_ID="${GCP_PROJECT_ID?Set GCP_PROJECT_ID}"
+ZONE="${GCP_ZONE?Set GCP_ZONE}"
+INSTANCE="${GCP_INSTANCE?Set GCP_INSTANCE}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 echo "=== Building Rust release ==="
