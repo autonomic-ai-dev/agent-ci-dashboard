@@ -323,7 +323,7 @@ export async function load(event) {
 			commits,
 			commitsPageInfo,
 			repoUrl: `https://github.com/${owner}/${repo}`,
-			session: session ? { user: session.user } : null,
+			session: session ? { user: session.user, accessToken: (session as { accessToken?: string }).accessToken } : null,
 			pullCount: repoData.openPulls?.totalCount ?? 0,
 			issueCount: repoData.openIssues?.totalCount ?? 0
 		};

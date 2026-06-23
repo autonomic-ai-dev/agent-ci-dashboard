@@ -1,0 +1,39 @@
+name: Smoke Test
+on:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Wait for deployment settle
+        run: sleep 10
+
+      - name: Check ingestor health
+        run: |
+          curl -sf --retry 5 --retry-delay 5 "${{ secrets.INGESTOR_URL }}/health" \
+            && echo "ingestor OK" \
+            || (echo "ingestor FAIL" && exit 1)
+
+      - name: Check insights health
+        run: |
+          curl -sf --retry 5 --retry-delay 5 "${{ secrets.INSIGHTS_URL }}/health" \
+            && echo "insights OK" \
+            || (echo "insights FAIL" && exit 1)
+
+      - name: Check frontend loads
+        run: |
+          curl -sf --retry 3 --retry-delay 3 "${{ secrets.FRONTEND_URL }}" \
+            | grep -q 'root' && echo "frontend OK" \
+            || (echo "frontend FAIL - check for SSR HTML" && exit 1)
+
+      - name: Check end-to-end (select repos loaded)
+        run: |
+          AUTH_HEADER="Authorization: Bearer ${{ secrets.GH_TOKEN }}"
+          curl -sf --retry 3 "${{ secrets.INGESTOR_URL }}/api/repos" \
+            -H "$AUTH_HEADER" | grep -q '"full_name"' \
+            && echo "repos API OK" \
+            || (echo "repos API FAIL" && exit 1)

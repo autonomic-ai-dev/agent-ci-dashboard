@@ -1,0 +1,25 @@
+name: PR Pipeline
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: pr-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  run-pipeline:
+    name: Validate PR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: aeswibon/pipeline-compose-run@v1.17.1
+        with:
+          pipeline_file: .github/pipelines/deploy.yml
+          pipeline_name: pr
+          github_token: ${{ github.token }}

@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package insights.v1;
+
+message Empty {}
+
+message Repository {
+  string name = 1;
+  string owner = 2;
+  string default_branch = 3;
+  string head_sha = 4;
+  string latest_tag = 5;
+  string status = 6;
+  int64 updated_at = 7;
+}
+
+message PullRequest {
+  string repo = 1;
+  int32 number = 2;
+  string title = 3;
+  string author = 4;
+  repeated string labels = 5;
+  repeated string assignees = 6;
+  bool is_draft = 7;
+  string mergeable = 8;
+  string state = 9;
+  string head_ref = 10;
+  string base_ref = 11;
+  int64 created_at = 12;
+  int64 updated_at = 13;
+  int64 merged_at = 14;
+  int64 closed_at = 15;
+  int32 total_checks = 16;
+  int32 completed_checks = 17;
+  int32 passing_checks = 18;
+}
+
+message WorkflowRun {
+  int64 id = 1;
+  string repo = 2;
+  string workflow_name = 3;
+  int32 run_number = 4;
+  string status = 5;
+  string conclusion = 6;
+  string head_sha = 7;
+  string actor = 8;
+  string branch = 9;
+  int64 started_at = 10;
+  int64 completed_at = 11;
+  int32 duration_seconds = 12;
+  string event = 13;
+}
+
+message Issue {
+  string repo = 1;
+  int32 number = 2;
+  string title = 3;
+  string author = 4;
+  repeated string labels = 5;
+  repeated string assignees = 6;
+  string state = 7;
+  int64 created_at = 8;
+  int64 updated_at = 9;
+  int64 closed_at = 10;
+}
+
+message Release {
+  string repo = 1;
+  string tag = 2;
+  string author = 3;
+  int64 published_at = 4;
+  bool is_draft = 5;
+  bool is_prerelease = 6;
+}
+
+message Commit {
+  string sha = 1;
+  string message = 2;
+  string author = 3;
+  int64 committed_at = 4;
+  repeated CheckRun checks = 5;
+}
+
+message CheckRun {
+  string name = 1;
+  string status = 2;
+  string conclusion = 3;
+  string details_url = 4;
+}
+
+message PageInfo {
+  bool has_next_page = 1;
+  string end_cursor = 2;
+}

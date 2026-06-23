@@ -1,0 +1,29 @@
+name: Deploy to Vercel
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download build
+        uses: actions/download-artifact@v7
+        with:
+          name: frontend-build
+          path: build
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Deploy to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          vercel pull --yes --environment=production --token="${VERCEL_TOKEN}"
+          vercel build --prod --token="${VERCEL_TOKEN}"
+          vercel deploy --prebuilt --prod --token="${VERCEL_TOKEN}"

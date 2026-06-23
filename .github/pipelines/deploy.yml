@@ -1,0 +1,49 @@
+version: 2
+
+companion_workflows:
+  - .github/workflows/ci.yml
+
+pipelines:
+  pr:
+    stages:
+      - id: build-backend
+        workflow: .github/workflows/deploy-build-backend.yml
+
+      - id: build-frontend
+        workflow: .github/workflows/deploy-build-frontend.yml
+
+  deploy:
+    stages:
+      - id: build-backend
+        workflow: .github/workflows/deploy-build-backend.yml
+        outputs:
+          - artifact_sha
+
+      - id: build-frontend
+        workflow: .github/workflows/deploy-build-frontend.yml
+
+      - id: migrate-db
+        workflow: .github/workflows/deploy-migrate-db.yml
+        needs:
+          - build-backend
+        inputs:
+          artifact_sha: ${{ context.build-backend.artifact_sha }}
+
+      - id: deploy-gcp
+        workflow: .github/workflows/deploy-gcp.yml
+        needs:
+          - build-backend
+          - migrate-db
+        inputs:
+          artifact_sha: ${{ context.build-backend.artifact_sha }}
+
+      - id: deploy-vercel
+        workflow: .github/workflows/deploy-vercel.yml
+        needs:
+          - build-frontend
+
+      - id: smoke-test
+        workflow: .github/workflows/deploy-smoke-test.yml
+        needs:
+          - deploy-gcp
+          - deploy-vercel

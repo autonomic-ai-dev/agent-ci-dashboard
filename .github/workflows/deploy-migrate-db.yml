@@ -1,0 +1,25 @@
+name: Migrate Database
+on:
+  workflow_dispatch:
+    inputs:
+      artifact_sha:
+        description: "Backend SHA that triggered this migration"
+        type: string
+        required: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download SQLx CLI
+        run: |
+          curl -fsSL https://github.com/launchbadge/sqlx/releases/latest/download/sqlx-cli-x86_64-unknown-linux-gnu -o /tmp/sqlx-cli
+          chmod +x /tmp/sqlx-cli
+
+      - name: Run migrations
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: /tmp/sqlx-cli migrate run --source migrations
