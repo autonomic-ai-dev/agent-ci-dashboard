@@ -34,7 +34,7 @@ pipelines:
         outputs:
           - image_tag
         inputs:
-          push: true
+          push: "true"
 
       - id: migrate-db
         workflow: .github/workflows/deploy-migrate-db.yml
