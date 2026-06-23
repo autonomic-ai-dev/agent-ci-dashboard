@@ -2,6 +2,10 @@ name: Smoke Test
 on:
   workflow_dispatch:
 
+env:
+  INGESTOR_URL: https://agent-ci-backend.tailc4e552.ts.net
+  INSIGHTS_URL: https://agent-ci-backend.tailc4e552.ts.net/api
+
 jobs:
   smoke:
     runs-on: ubuntu-latest
@@ -14,13 +18,13 @@ jobs:
 
       - name: Check ingestor health
         run: |
-          curl -sf --retry 5 --retry-delay 5 "${{ secrets.INGESTOR_URL }}/health" \
+          curl -sf --retry 5 --retry-delay 5 "$INGESTOR_URL/health" \
             && echo "ingestor OK" \
             || (echo "ingestor FAIL" && exit 1)
 
       - name: Check insights health
         run: |
-          curl -sf --retry 5 --retry-delay 5 "${{ secrets.INSIGHTS_URL }}/health" \
+          curl -sf --retry 5 --retry-delay 5 "$INSIGHTS_URL/health" \
             && echo "insights OK" \
             || (echo "insights FAIL" && exit 1)
 
@@ -33,7 +37,7 @@ jobs:
       - name: Check end-to-end (select repos loaded)
         run: |
           AUTH_HEADER="Authorization: Bearer ${{ secrets.GH_TOKEN }}"
-          curl -sf --retry 3 "${{ secrets.INGESTOR_URL }}/api/repos" \
+          curl -sf --retry 3 "$INGESTOR_URL/api/repos" \
             -H "$AUTH_HEADER" | grep -q '"full_name"' \
             && echo "repos API OK" \
             || (echo "repos API FAIL" && exit 1)
