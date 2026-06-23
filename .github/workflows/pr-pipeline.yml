@@ -22,4 +22,5 @@ jobs:
       - uses: aeswibon/pipeline-compose-run@v1.17.1
         with:
           pipeline_file: .github/pipelines/pr.yml
+          ref: ${{ github.head_ref }}
           github_token: ${{ github.token }}
