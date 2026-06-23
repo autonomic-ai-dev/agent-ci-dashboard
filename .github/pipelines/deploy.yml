@@ -6,16 +6,16 @@ companion_workflows:
 pipelines:
   pr:
     stages:
-      - id: build-backend
+      - id: pr-build-backend
         workflow: .github/workflows/deploy-build-backend.yml
 
-      - id: build-frontend
+      - id: pr-build-frontend
         workflow: .github/workflows/deploy-build-frontend.yml
 
-      - id: docker-publish
+      - id: pr-docker-publish
         workflow: .github/workflows/deploy-docker-publish.yml
         needs:
-          - build-backend
+          - pr-build-backend
 
   deploy:
     stages:
