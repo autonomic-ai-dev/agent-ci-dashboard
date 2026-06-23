@@ -743,6 +743,20 @@
 														/><path d="M9 18c-4.51 2-5-2-7-2" /></svg
 													>
 												</a>
+
+												{#if data.session && (run.status === 'failure' || run.status === 'timed_out' || run.status === 'cancelled') && run.id}
+													<button
+														onclick={(e) => {
+															e.preventDefault();
+															rerunWorkflow(run.id, 'failed');
+														}}
+														disabled={rerunningIds.has(String(run.id))}
+														class="opacity-0 group-hover:opacity-100 p-1.5 text-text-secondary-light hover:text-cyan-600 dark:text-text-secondary-dark dark:hover:text-cyan-400 bg-white dark:bg-black rounded border border-border-light dark:border-border-dark shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+														title="Rerun failed jobs"
+													>
+														<RefreshCw size={12} class={rerunningIds.has(String(run.id)) ? 'animate-spin' : ''} />
+													</button>
+												{/if}
 											</div>
 										{/each}
 									</div>
@@ -792,7 +806,13 @@
 										<div
 											class="flex items-center gap-3 text-[13px] text-text-secondary-light dark:text-text-secondary-dark flex-wrap"
 										>
-											<span class="font-mono bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-border-light dark:border-border-dark"
+											{#if pr.isDraft}
+											<span
+												class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-500/10 text-gray-500 dark:text-gray-400 border border-gray-500/30"
+												>Draft</span
+											>
+										{/if}
+										<span class="font-mono bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-border-light dark:border-border-dark"
 												>#{pr.number}</span
 											>
 											{#if pr.author}
