@@ -12,6 +12,11 @@ pipelines:
       - id: build-frontend
         workflow: .github/workflows/deploy-build-frontend.yml
 
+      - id: docker-publish
+        workflow: .github/workflows/deploy-docker-publish.yml
+        needs:
+          - build-backend
+
   deploy:
     stages:
       - id: build-backend
@@ -21,6 +26,15 @@ pipelines:
 
       - id: build-frontend
         workflow: .github/workflows/deploy-build-frontend.yml
+
+      - id: docker-publish
+        workflow: .github/workflows/deploy-docker-publish.yml
+        needs:
+          - build-backend
+        outputs:
+          - image_tag
+        inputs:
+          push: true
 
       - id: migrate-db
         workflow: .github/workflows/deploy-migrate-db.yml
@@ -32,10 +46,10 @@ pipelines:
       - id: deploy-gcp
         workflow: .github/workflows/deploy-gcp.yml
         needs:
-          - build-backend
+          - docker-publish
           - migrate-db
         inputs:
-          artifact_sha: ${{ context.build-backend.artifact_sha }}
+          image_tag: ${{ context.docker-publish.image_tag }}
 
       - id: deploy-vercel
         workflow: .github/workflows/deploy-vercel.yml
