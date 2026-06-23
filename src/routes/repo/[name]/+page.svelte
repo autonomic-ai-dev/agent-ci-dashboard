@@ -65,6 +65,19 @@
 	let terminalRunStatus = $state('');
 	let terminalLoading = $state(false);
 
+	// Toast notifications
+	type ToastType = 'success' | 'error' | 'info';
+	let toasts = $state<Array<{ id: number; message: string; type: ToastType }>>([]);
+	let toastId = 0;
+
+	function addToast(message: string, type: ToastType = 'info') {
+		const id = ++toastId;
+		toasts = [...toasts, { id, message, type }];
+		setTimeout(() => {
+			toasts = toasts.filter((t) => t.id !== id);
+		}, 4000);
+	}
+
 	let rerunningIds = $state<Set<string>>(new Set());
 	let mergingIds = $state<Set<number>>(new Set());
 	let closingIds = $state<Set<number>>(new Set());
@@ -117,7 +130,7 @@
 
 	async function rerunWorkflow(runId: string, type: 'all' | 'failed' = 'failed') {
 		rerunningIds.add(runId);
-		rerunningIds = new Set(rerunningIds); // trigger reactivity
+		rerunningIds = new Set(rerunningIds);
 
 		try {
 			const response = await fetch(`/api/repo/${data.repo}/run`, {
@@ -127,20 +140,43 @@
 			});
 
 			if (response.ok) {
-				// Refresh the data after a short delay to see the new pending job
-				setTimeout(() => {
-					window.location.reload();
-				}, 2000);
+				addToast('Rerun triggered', 'success');
+				if (activeTab === 'pulls') {
+					pulls = [];
+					pullsLoaded = false;
+					loadPulls();
+				} else {
+					commits = [];
+					loadingCommits = false;
+					loadCommitsFromApi();
+				}
+				if (terminalOpen) terminalOpen = false;
 			} else {
 				const res = await response.json();
-				alert(res.error || 'Failed to trigger rerun');
+				addToast(res.error || 'Failed to trigger rerun', 'error');
 			}
 		} catch (error) {
 			console.error('Error triggering rerun:', error);
-			alert('Network error while triggering rerun');
+			addToast('Network error while triggering rerun', 'error');
 		} finally {
 			rerunningIds.delete(runId);
 			rerunningIds = new Set(rerunningIds);
+		}
+	}
+
+	async function loadCommitsFromApi() {
+		loadingCommits = true;
+		try {
+			const res = await fetch(`/api/repo/${data.repo}/history?type=commits`);
+			const json = await res.json();
+			if (json.success) {
+				commits = json.data;
+				commitsPageInfo = json.pageInfo;
+			}
+		} catch (e) {
+			console.error('Failed to reload commits', e);
+		} finally {
+			loadingCommits = false;
 		}
 	}
 
@@ -181,6 +217,7 @@
 	}
 
 	async function mergePR(pullNumber: number) {
+		if (!confirm('Merge this pull request?')) return;
 		mergingIds.add(pullNumber);
 		mergingIds = new Set(mergingIds);
 
@@ -193,13 +230,14 @@
 
 			if (res.ok) {
 				pulls = pulls.filter((pr) => pr.number !== pullNumber);
+				addToast(`PR #${pullNumber} merged`, 'success');
 			} else {
 				const json = await res.json();
-				alert(json.error || 'Failed to merge PR');
+				addToast(json.error || 'Failed to merge PR', 'error');
 			}
 		} catch (e) {
 			console.error('Error merging PR:', e);
-			alert('Network error while merging');
+			addToast('Network error while merging', 'error');
 		} finally {
 			mergingIds.delete(pullNumber);
 			mergingIds = new Set(mergingIds);
@@ -207,6 +245,7 @@
 	}
 
 	async function closeIssue(issueNumber: number) {
+		if (!confirm('Close this issue?')) return;
 		closingIds.add(issueNumber);
 		closingIds = new Set(closingIds);
 
@@ -219,13 +258,14 @@
 
 			if (res.ok) {
 				issues = issues.filter((issue) => issue.number !== issueNumber);
+				addToast(`Issue #${issueNumber} closed`, 'success');
 			} else {
 				const json = await res.json();
-				alert(json.error || 'Failed to close issue');
+				addToast(json.error || 'Failed to close issue', 'error');
 			}
 		} catch (e) {
 			console.error('Error closing issue:', e);
-			alert('Network error while closing issue');
+			addToast('Network error while closing issue', 'error');
 		} finally {
 			closingIds.delete(issueNumber);
 			closingIds = new Set(closingIds);
@@ -1179,6 +1219,32 @@
 				{/if}
 			</div>
 		</div>
+	</div>
+{/if}
+
+<!-- Toast container -->
+{#if toasts.length > 0}
+	<div class="fixed bottom-6 right-6 z-[100] flex flex-col gap-2 max-w-sm">
+		{#each toasts as toast (toast.id)}
+			<div
+				class="animate-in slide-in-from-right-4 fade-in duration-300 flex items-center gap-2 px-4 py-3 rounded-xl border shadow-lg text-sm font-medium backdrop-blur-sm {toast.type === 'success' ? 'bg-green-500/15 text-green-600 dark:text-green-400 border-green-500/30' : toast.type === 'error' ? 'bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30' : 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/30'}"
+			>
+				{#if toast.type === 'success'}
+					<CheckCircle size={16} />
+				{:else if toast.type === 'error'}
+					<XCircle size={16} />
+				{:else}
+					<AlertCircle size={16} />
+				{/if}
+				<span>{toast.message}</span>
+				<button
+					onclick={() => (toasts = toasts.filter((t) => t.id !== toast.id))}
+					class="ml-auto p-0.5 opacity-60 hover:opacity-100 transition-opacity"
+				>
+					<X size={14} />
+				</button>
+			</div>
+		{/each}
 	</div>
 {/if}
 
