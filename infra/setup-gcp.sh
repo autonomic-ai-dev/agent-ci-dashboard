@@ -2,26 +2,27 @@
 set -euo pipefail
 
 # ============================================
-# GCP Infrastructure Setup
-# Creates e2-micro VM, firewall rules, and IAM
-# Region: us-east1 (keep all services colocated)
+# GCP Infrastructure Setup — $0 blueprint
+# Creates e2-micro VM (no external IP), IAP,
+# firewall rules, and WIF for GitHub Actions
+# Region: us-east1 (free tier)
 # ============================================
 
-PROJECT_ID="${GCP_PROJECT_ID?Set GCP_PROJECT_ID}"
+PROJECT_ID="${GCP_PROJECT_ID:?Set GCP_PROJECT_ID}"
 ZONE="${GCP_ZONE:-us-east1-b}"
 INSTANCE_NAME="${GCP_INSTANCE:-agent-ci-backend}"
 SERVICE_ACCOUNT="github-actions-deployer"
 
 echo "=== Setting up GCP project: $PROJECT_ID ==="
 
-# Ensure required APIs are enabled
+# Enable APIs
 gcloud services enable \
   compute.googleapis.com \
   iam.googleapis.com \
   cloudresourcemanager.googleapis.com \
   --project="$PROJECT_ID"
 
-# Create service account for GitHub Actions
+# Create service account
 if ! gcloud iam service-accounts describe "$SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com" --project="$PROJECT_ID" &>/dev/null; then
   gcloud iam service-accounts create "$SERVICE_ACCOUNT" \
     --display-name="GitHub Actions Deployer" \
@@ -39,43 +40,29 @@ gcloud projects add-iam-policy-binding "$PROJECT_ID" \
   --member="serviceAccount:$SA_EMAIL" \
   --role="roles/iam.serviceAccountUser"
 
-# Create service account key for GitHub Actions
-gcloud iam service-accounts keys create gcp-sa-key.json \
-  --iam-account="$SA_EMAIL" \
-  --project="$PROJECT_ID"
+gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+  --member="serviceAccount:$SA_EMAIL" \
+  --role="roles/iap.tunnelResourceAccessor"
 
-echo "=== Add the contents of gcp-sa-key.json as GCP_SA_KEY in GitHub Secrets ==="
-cat gcp-sa-key.json
-echo ""
-echo "=== Key saved to gcp-sa-key.json (delete after adding to GitHub) ==="
+# Enable Private Google Access on the subnet (VM needs this for Google APIs)
+gcloud compute networks subnets update default \
+  --project="$PROJECT_ID" \
+  --region="${ZONE%-*}" \
+  --enable-private-ip-google-access
 
-# Create firewall rule for gRPC-web (port 3002)
-if ! gcloud compute firewall-rules describe allow-grpc-web --project="$PROJECT_ID" &>/dev/null; then
-  gcloud compute firewall-rules create allow-grpc-web \
+# IAP SSH firewall
+if ! gcloud compute firewall-rules describe allow-ssh-iap --project="$PROJECT_ID" &>/dev/null; then
+  gcloud compute firewall-rules create allow-ssh-iap \
     --project="$PROJECT_ID" \
     --direction=INGRESS \
     --priority=1000 \
     --network=default \
     --action=ALLOW \
-    --rules=tcp:3002 \
-    --source-ranges=0.0.0.0/0 \
-    --target-tags=grpc-server
+    --rules=tcp:22 \
+    --source-ranges=35.235.240.0/20
 fi
 
-# Create firewall rule for webhook (port 3001) — GitHub IPs only
-if ! gcloud compute firewall-rules describe allow-webhook --project="$PROJECT_ID" &>/dev/null; then
-  gcloud compute firewall-rules create allow-webhook \
-    --project="$PROJECT_ID" \
-    --direction=INGRESS \
-    --priority=1000 \
-    --network=default \
-    --action=ALLOW \
-    --rules=tcp:3001 \
-    --source-ranges=192.30.252.0/22,140.82.112.0/20,143.55.64.0/20 \
-    --target-tags=grpc-server
-fi
-
-# Create the e2-micro VM
+# Create e2-micro VM — no external IP ($0 cost)
 gcloud compute instances create "$INSTANCE_NAME" \
   --project="$PROJECT_ID" \
   --zone="$ZONE" \
@@ -84,13 +71,13 @@ gcloud compute instances create "$INSTANCE_NAME" \
   --image-project=ubuntu-os-cloud \
   --boot-disk-size=10GB \
   --boot-disk-type=pd-standard \
-  --tags=grpc-server \
+  --no-address \
   --metadata=enable-oslogin=true
 
-echo "=== VM created: $INSTANCE_NAME ==="
-echo "Zone: $ZONE"
+echo "=== VM created: $INSTANCE_NAME (no external IP) ==="
 echo ""
 echo "=== Next steps ==="
-echo "1. SSH into the VM and run: setup-vm.sh"
-echo "2. Add GCP_SA_KEY, SUPABASE_DB_URL, VERCEL_TOKEN to GitHub Secrets"
-echo "3. Push to main to trigger deploy"
+echo "1. Set up WIF: gcloud iam service-accounts add-iam-policy-binding ..."
+echo "2. SCP infra/setup-vm.sh -> VM: gcloud compute scp ... --tunnel-through-iap"
+echo "3. SSH via IAP: gcloud compute ssh $INSTANCE_NAME --tunnel-through-iap"
+echo "4. Run local tunnel: infra/start-tunnels.sh"
