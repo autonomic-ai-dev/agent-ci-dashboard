@@ -51,6 +51,7 @@ export async function GET(event) {
 			fragment CommitDetails on Commit {
 				oid
 				committedDate
+				messageHeadline
 				author {
 					user {
 						login
@@ -58,7 +59,7 @@ export async function GET(event) {
 						url
 					}
 				}
-				checkSuites(first: 100) {
+				checkSuites(first: 50) {
 					nodes {
 						status
 						conclusion
@@ -67,6 +68,26 @@ export async function GET(event) {
 							databaseId
 							workflow {
 								name
+							}
+						}
+					}
+				}
+				history(first: 10) {
+					nodes {
+						oid
+						committedDate
+						messageHeadline
+						checkSuites(first: 50) {
+							nodes {
+								status
+								conclusion
+								updatedAt
+								workflowRun {
+									databaseId
+									workflow {
+										name
+									}
+								}
 							}
 						}
 					}
@@ -81,7 +102,7 @@ export async function GET(event) {
 						target {
 							... on Commit {
 								oid
-								checkSuites(first: 100) {
+								checkSuites(first: 50) {
 									nodes {
 										status
 										conclusion
@@ -112,7 +133,16 @@ export async function GET(event) {
 			}
 		`;
 
-		const response: any = await octokit.graphql(query);
+		let response: any;
+		try {
+			response = await octokit.graphql(query);
+		} catch (graphQLErr: any) {
+			if (graphQLErr.data) {
+				response = graphQLErr.data;
+			} else {
+				throw graphQLErr;
+			}
+		}
 
 		const statuses = AGENT_REPOS.map((repo, idx) => {
 			const repoData = response[`repo${idx}`];
@@ -127,6 +157,9 @@ export async function GET(event) {
 					tag: tagName,
 					status: 'no-runs',
 					sha: null,
+					testedSha: null,
+					isDocOnlyUpdate: false,
+					messageHeadline: null,
 					htmlUrl: `https://github.com/${GITHUB_OWNER}/${repo}`,
 					actor: null,
 					updatedAt: null,
@@ -146,12 +179,29 @@ export async function GET(event) {
 					}
 				: null;
 
-			const validRuns = (target.checkSuites?.nodes || []).filter(
+			let validRuns = (target.checkSuites?.nodes || []).filter(
 				(node: any) => node && node.workflowRun
 			);
 
+			// If HEAD commit had no CI runs (e.g., documentation or chore change with paths-ignore),
+			// inspect the recent history of the default branch to find the most recent commit that ran CI.
+			let isDocOnlyUpdate = false;
+			let testedSha = sha;
+			if (validRuns.length === 0 && target.history?.nodes?.length) {
+				const testedCommit = target.history.nodes.find(
+					(c: any) => (c.checkSuites?.nodes || []).some((n: any) => n && n.workflowRun)
+				);
+				if (testedCommit) {
+					validRuns = (testedCommit.checkSuites?.nodes || []).filter(
+						(node: any) => node && node.workflowRun
+					);
+					isDocOnlyUpdate = true;
+					testedSha = testedCommit.oid;
+				}
+			}
+
 			// Merge tag commit check suites if tag points to a different commit
-			if (tagTarget && tagTarget.oid !== sha) {
+			if (tagTarget && tagTarget.oid !== sha && tagTarget.oid !== testedSha) {
 				const tagRuns = (tagTarget.checkSuites?.nodes || []).filter(
 					(node: any) => node && node.workflowRun
 				);
@@ -220,6 +270,9 @@ export async function GET(event) {
 				tag: tagName,
 				status: aggregateStatus,
 				sha,
+				testedSha,
+				isDocOnlyUpdate,
+				messageHeadline: target.messageHeadline,
 				htmlUrl: `https://github.com/${GITHUB_OWNER}/${repo}`,
 				actor,
 				updatedAt: target.committedDate,

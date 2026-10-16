@@ -622,6 +622,9 @@
 	let failingCount = $derived(statuses.filter((s: any) => s.status === 'failure').length);
 	let pendingCount = $derived(statuses.filter((s: any) => s.status === 'pending' || s.status === 'in_progress').length);
 	let successCount = $derived(statuses.filter((s: any) => s.status === 'success').length);
+	let operationalCount = $derived(
+		statuses.filter((s: any) => s.status === 'success' || s.status === 'pending' || s.status === 'in_progress').length
+	);
 
 	let categoryCounts = $derived.by(() => {
 		const counts = { all: statuses.length, core: 0, execution: 0, sensory: 0, interface: 0 };
@@ -771,12 +774,20 @@
 				<span class="h-2 w-2 rounded-full {failingCount === 0 ? 'bg-emerald-400 animate-pulse' : 'bg-rose-500'}"></span>
 			</div>
 			<div class="flex items-baseline gap-2 mb-1">
-				<span class="text-3xl font-mono font-bold text-white tracking-tight">{successCount}/{totalOrgans || 11}</span>
-				<span class="text-xs font-mono text-emerald-400">OPERATIONAL</span>
+				<span class="text-3xl font-mono font-bold text-white tracking-tight">{operationalCount}/{totalOrgans || 11}</span>
+				<span class="text-xs font-mono {failingCount === 0 ? 'text-emerald-400' : 'text-rose-400'}">{failingCount === 0 ? 'OPERATIONAL' : `${failingCount} FAILING`}</span>
 			</div>
 			<div class="text-[11px] font-sans text-slate-400 flex items-center justify-between pt-2 border-t border-white/[0.06]">
 				<span>Pipeline rollup</span>
-				<span class="font-mono text-slate-300">{failingCount === 0 ? '0 faults' : `${failingCount} failing`}</span>
+				<span class="font-mono text-slate-300">
+					{#if failingCount > 0}
+						<span class="text-rose-400">{failingCount} failing</span>
+					{:else if pendingCount > 0}
+						<span class="text-yellow-400">{pendingCount} building</span>
+					{:else}
+						<span class="text-emerald-400">0 faults</span>
+					{/if}
+				</span>
 			</div>
 		</div>
 
@@ -979,8 +990,21 @@
 								</span>
 							{/if}
 							{#if item.sha}
-								<span class="bg-white/[0.04] text-slate-400 border border-white/10 px-1.5 py-0.5 rounded">
+								<span
+									class="bg-white/[0.04] text-slate-400 border border-white/10 px-1.5 py-0.5 rounded cursor-default"
+									title={item.isDocOnlyUpdate
+										? `HEAD: ${item.sha.substring(0, 7)} (CI reflected from tested commit ${item.testedSha?.substring(0, 7) || 'earlier'})`
+										: `Commit: ${item.sha.substring(0, 7)}`}
+								>
 									{item.sha.substring(0, 7)}
+								</span>
+							{/if}
+							{#if item.isDocOnlyUpdate}
+								<span
+									class="bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-1.5 py-0.5 rounded flex items-center gap-1 text-[10px]"
+									title="HEAD commit is documentation/chore; pipeline status reflected from tested commit {item.testedSha?.substring(0, 7)}"
+								>
+									<span>DOCS</span>
 								</span>
 							{/if}
 							<span class="bg-white/[0.04] text-slate-400 border border-white/10 px-1.5 py-0.5 rounded flex items-center gap-1">
