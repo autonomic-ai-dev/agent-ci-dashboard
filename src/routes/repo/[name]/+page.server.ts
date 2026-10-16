@@ -50,6 +50,7 @@ export async function load(event) {
 		const query = `
 			query getRepoDetails($owner: String!, $repo: String!) {
 				repository(owner: $owner, name: $repo) {
+					description
 					openPulls: pullRequests(states: OPEN) {
 						totalCount
 					}
@@ -104,6 +105,7 @@ export async function load(event) {
 						}
 					}
 					defaultBranchRef {
+						name
 						target {
 							... on Commit {
 								history(first: 10) {
@@ -317,6 +319,8 @@ export async function load(event) {
 
 		return {
 			repo,
+			description: repoData.description || '',
+			defaultBranch: repoData.defaultBranchRef?.name || 'master',
 			readmeHtml,
 			releases,
 			releasesPageInfo,
