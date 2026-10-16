@@ -210,7 +210,8 @@ export async function load(event) {
 		const releases = repoData.releases.nodes.map((node: any) => ({
 			name: node.name || node.tagName,
 			tag: node.tagName,
-			descriptionHtml: node.descriptionHTML || '<p>Release has no description.</p>',
+			descriptionHtml: node.descriptionHTML || '',
+			descriptionHTML: node.descriptionHTML || '',
 			url: node.url,
 			publishedAt: node.publishedAt,
 			author: node.author

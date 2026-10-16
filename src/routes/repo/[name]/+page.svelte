@@ -36,10 +36,10 @@
 
 	let { data } = $props();
 
-	type Tab = 'runs' | 'pulls' | 'readme' | 'releases' | 'issues';
+	type Tab = 'runs' | 'readme' | 'releases' | 'issues';
 	let activeTab = $derived.by<Tab>(() => {
 		const tabParam = $page.url.searchParams.get('tab') as Tab | null;
-		if (tabParam && ['runs', 'pulls', 'readme', 'releases', 'issues'].includes(tabParam)) return tabParam;
+		if (tabParam && ['runs', 'readme', 'releases', 'issues'].includes(tabParam)) return tabParam;
 		return 'runs';
 	});
 
@@ -160,7 +160,7 @@
 	});
 
 	$effect(() => {
-		if ((activeTab === 'pulls' || activeTab === 'runs') && !pullsLoaded && (data.pullCount ?? 0) > 0) {
+		if (!pullsLoaded && (data.pullCount ?? 0) > 0) {
 			pullsLoaded = true;
 			loadPulls();
 		}
@@ -443,8 +443,6 @@
 			} finally {
 				loadingCommits = false;
 			}
-		} else if (activeTab === 'pulls' && pullsPageInfo.hasNextPage && !loadingPulls) {
-			loadPulls(pullsPageInfo.endCursor);
 		} else if (activeTab === 'issues' && issuesPageInfo.hasNextPage && !loadingIssues) {
 			loadIssues(issuesPageInfo.endCursor);
 		}
@@ -721,21 +719,6 @@
 				<span>PIPELINE RUNS</span>
 				{#if commits.length > 0}
 					<span class="text-[10px] px-1.5 py-0.2 rounded bg-black/40 text-slate-400">{commits.length}</span>
-				{/if}
-			</button>
-
-			<button
-				onclick={() => switchTab('pulls')}
-				class={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-mono font-medium transition-all ${
-					activeTab === 'pulls'
-						? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
-						: 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
-				}`}
-			>
-				<GitPullRequest size={14} />
-				<span>PULL REQUESTS</span>
-				{#if data.pullCount > 0}
-					<span class="text-[10px] px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 font-bold">{data.pullCount}</span>
 				{/if}
 			</button>
 
@@ -1104,9 +1087,13 @@
 										<ExternalLink size={12} />
 									</a>
 								</div>
-								{#if release.descriptionHTML}
-									<div class="text-xs font-sans text-slate-300 prose prose-invert max-w-none pt-2 border-t border-white/[0.06]">
-										{@html release.descriptionHTML}
+								{#if release.descriptionHtml || release.descriptionHTML}
+									<div class="text-xs font-sans text-slate-300 prose prose-invert max-w-none pt-3 border-t border-white/[0.08] leading-relaxed bg-[#0a0e14]/50 p-4 rounded-lg border border-white/5">
+										<div class="text-[10px] font-mono font-bold tracking-wider uppercase text-cyan-400 mb-2 flex items-center gap-1.5">
+											<FileText size={12} />
+											<span>Release Notes</span>
+										</div>
+										{@html release.descriptionHtml || release.descriptionHTML}
 									</div>
 								{/if}
 							</div>
