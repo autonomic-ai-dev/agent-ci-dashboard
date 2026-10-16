@@ -22,7 +22,7 @@ export async function GET(event) {
 	});
 
 	const repo = params.name;
-	const runIdStr = url.searchParams.get('run_id');
+	const runIdStr = url.searchParams.get('runId') || url.searchParams.get('run_id');
 
 	if (!repo || !runIdStr) {
 		return json({ success: false, error: 'Missing run_id or repo' }, { status: 400 });

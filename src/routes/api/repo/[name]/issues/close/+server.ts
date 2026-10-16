@@ -1,6 +1,8 @@
 import { json } from '@sveltejs/kit';
 import { Octokit } from 'octokit';
 
+import { env } from '$env/dynamic/private';
+
 const GITHUB_OWNER = 'autonomic-ai-dev';
 
 export async function POST(event) {
@@ -11,9 +13,9 @@ export async function POST(event) {
 		// AUTH_URL not configured
 	}
 	// @ts-ignore
-	const token = session?.accessToken;
+	const token = session?.accessToken || env.GITHUB_TOKEN;
 
-	if (!session || !token) {
+	if (!token) {
 		return json({ success: false, error: 'Unauthorized. Please sign in.' }, { status: 401 });
 	}
 

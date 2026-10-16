@@ -2,6 +2,7 @@
 	import '../app.css';
 	import { LogOut, Activity } from '@lucide/svelte';
 	import { signIn, signOut } from '@auth/sveltekit/client';
+	import AutonomicLogo from '$lib/components/AutonomicLogo.svelte';
 
 	let { children, data } = $props();
 </script>
@@ -37,11 +38,7 @@
 				href="/"
 				class="flex items-center gap-3 text-slate-300 hover:text-cyan-400 transition-all group"
 			>
-				<div
-					class="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:shadow-cyan-400/40 transition-all"
-				>
-					<Activity class="text-[#080b10]" size={16} />
-				</div>
+				<AutonomicLogo size={28} animated={true} />
 				<div class="flex items-baseline gap-2">
 					<span class="text-sm font-bold tracking-widest uppercase font-mono text-cyan-400">Autonomic</span>
 					<span class="text-xs font-mono text-slate-400 tracking-wider hidden sm:inline">Mission Control</span>
@@ -92,11 +89,7 @@
 			<div
 				class="bg-[#0d1117]/95 border border-white/10 rounded-2xl p-8 sm:p-10 max-w-md w-full shadow-2xl relative z-10 flex flex-col items-center text-center backdrop-blur-xl"
 			>
-				<div
-					class="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center shadow-lg shadow-cyan-500/20 mb-6"
-				>
-					<Activity class="text-[#080b10]" size={32} />
-				</div>
+				<AutonomicLogo size={64} animated={true} class="mb-6" />
 
 				<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-mono mb-4">
 					<span class="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-ping"></span>
