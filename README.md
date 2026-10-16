@@ -1,5 +1,7 @@
 # Agent CI Dashboard
 
+Agent context: [docs/CONTEXT.md](docs/CONTEXT.md).
+
 A centralized, "Mission Control" dashboard for tracking GitHub Actions workflows across a GitHub Organization or set of repositories.
 
 ## Features
