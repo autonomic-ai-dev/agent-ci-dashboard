@@ -7,13 +7,15 @@ const GITHUB_OWNER = 'autonomic-ai-dev';
 const AGENT_REPOS = [
 	'agent-body',
 	'agent-brain',
-	'agent-eyes',
-	'agent-heart',
-	'agent-immune',
-	'agent-mouth',
+	'agent-spine',
 	'agent-muscle',
+	'agent-heart',
+	'agent-mouth',
+	'agent-immune',
 	'agent-nerves',
-	'agent-spine'
+	'agent-eyes',
+	'agent-tui',
+	'agent-ci-dashboard'
 ];
 
 export async function GET(event) {
