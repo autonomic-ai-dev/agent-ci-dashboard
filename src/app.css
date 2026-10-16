@@ -4,32 +4,43 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-	--font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+	--font-sans: 'Geist', 'Inter', ui-sans-serif, system-ui, sans-serif;
+	--font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
 	/* Rich Light Theme Palette */
-	--color-base-light: #f8fafc; /* slate-50 */
+	--color-base-light: #f8fafc;
 	--color-surface-light: #ffffff;
-	--color-text-primary-light: #0f172a; /* slate-900 */
-	--color-text-secondary-light: #64748b; /* slate-500 */
-	--color-border-light: #e2e8f0; /* slate-200 */
+	--color-text-primary-light: #0f172a;
+	--color-text-secondary-light: #64748b;
+	--color-border-light: #e2e8f0;
 
-	/* Rich Dark Theme Palette (Deep Ocean/Slate vibe) */
-	--color-base-dark: #09090b; /* zinc-950 */
-	--color-surface-dark: #18181b; /* zinc-900 */
-	--color-surface-hover-dark: #27272a; /* zinc-800 */
-	--color-text-primary-dark: #fafafa; /* zinc-50 */
-	--color-text-secondary-dark: #a1a1aa; /* zinc-400 */
-	--color-border-dark: #27272a; /* zinc-800 */
+	/* Orbital Telemetry & Avionics Interface Palette */
+	--color-canvas-dark: #080b10;
+	--color-surface-dark: #0d1117;
+	--color-surface-elevated: #161b22;
+	--color-surface-hover-dark: #21262d;
+	--color-border-dark: #21262d;
+	--color-border-subtle: rgba(255, 255, 255, 0.08);
+
+	--color-telemetry-cyan: #00f2fe;
+	--color-telemetry-emerald: #10b981;
+	--color-telemetry-indigo: #6366f1;
+	--color-telemetry-amber: #f59e0b;
+	--color-telemetry-crimson: #ef4444;
+
+	--color-text-primary-dark: #f0f6fc;
+	--color-text-secondary-dark: #8b949e;
+	--color-text-muted-dark: #484f58;
 }
 
 @layer base {
 	body {
-		@apply text-text-primary-light transition-colors duration-300 antialiased min-h-screen flex flex-col relative;
+		@apply text-text-primary-light transition-colors duration-300 antialiased min-h-screen flex flex-col relative font-sans;
 		background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
 	}
 	.dark body {
 		@apply text-text-primary-dark;
-		background: #0b0f19;
+		background: #080b10;
 	}
 
 	:not(pre) > code {
@@ -39,12 +50,12 @@
 		border-radius: 0.375rem;
 		font-size: 0.875em;
 		font-weight: 500;
-		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+		font-family: var(--font-mono);
 	}
 
 	.dark :not(pre) > code {
-		background-color: rgba(6, 182, 212, 0.15);
-		color: #22d3ee;
+		background-color: rgba(0, 242, 254, 0.12);
+		color: #00f2fe;
 	}
 }
 
@@ -57,9 +68,11 @@
 }
 
 .dark .glass-card {
-	background-color: rgba(24, 24, 27, 0.4);
-	border: 1px solid rgba(255, 255, 255, 0.1);
-	box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+	background-color: rgba(13, 17, 23, 0.75);
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
 }
 
 .glass-card:hover {
@@ -69,9 +82,36 @@
 }
 
 .dark .glass-card:hover {
-	background-color: rgba(24, 24, 27, 0.6);
-	border: 1px solid rgba(255, 255, 255, 0.2);
-	box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+	background-color: rgba(22, 27, 34, 0.85);
+	border: 1px solid rgba(0, 242, 254, 0.25);
+	box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6), 0 0 16px rgba(0, 242, 254, 0.1);
+}
+
+.avionics-panel {
+	background-color: rgba(13, 17, 23, 0.85);
+	backdrop-filter: blur(16px);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	border-radius: 0.5rem;
+}
+
+.telemetry-pill {
+	font-family: var(--font-mono);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	font-size: 0.625rem;
+	padding: 0.15rem 0.5rem;
+	border-radius: 9999px;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+}
+
+.telemetry-glow-cyan {
+	box-shadow: 0 0 12px rgba(0, 242, 254, 0.35);
+}
+
+.telemetry-glow-emerald {
+	box-shadow: 0 0 12px rgba(16, 185, 129, 0.35);
 }
 
 @keyframes fadeInUp {
