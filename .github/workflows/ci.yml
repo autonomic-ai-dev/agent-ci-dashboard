@@ -64,9 +64,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
-
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
@@ -80,9 +77,6 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
-
-      - name: Generate proto client
-        run: bun run gen:proto
 
       - name: Type check
         run: bun run check
