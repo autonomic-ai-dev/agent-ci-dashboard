@@ -25,6 +25,7 @@
 		Info,
 		Check
 	} from '@lucide/svelte';
+	import AutonomicLogo from '$lib/components/AutonomicLogo.svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
@@ -175,6 +176,136 @@
 	let closingIds = $state<Set<number>>(new Set());
 	let rerunningIds = $state<Set<string>>(new Set());
 
+	// PR Selection & Batch Operations
+	let selectedPRs = $state<Set<string>>(new Set());
+	let batchMerging = $state(false);
+	let updatingBranchIds = $state<Set<string>>(new Set());
+	let updatingAllOutdated = $state(false);
+
+	function getPRKey(repo: string, num: number) {
+		return `${repo}#${num}`;
+	}
+
+	function toggleSelectPR(repo: string, num: number) {
+		const key = getPRKey(repo, num);
+		const next = new Set(selectedPRs);
+		if (next.has(key)) next.delete(key);
+		else next.add(key);
+		selectedPRs = next;
+	}
+
+	let readyPRs = $derived(pulls.filter((pr) => pr.canMerge));
+	let outdatedPRs = $derived(pulls.filter((pr) => pr.isBehind));
+
+	function selectAllReady() {
+		const next = new Set<string>();
+		for (const pr of readyPRs) {
+			next.add(getPRKey(pr.repo, pr.number));
+		}
+		selectedPRs = next;
+	}
+
+	function clearPRSelection() {
+		selectedPRs = new Set();
+	}
+
+	async function updateBranch(repo: string, pullNumber: number) {
+		const key = getPRKey(repo, pullNumber);
+		updatingBranchIds.add(key);
+		updatingBranchIds = new Set(updatingBranchIds);
+
+		try {
+			const res = await fetch(`/api/repo/${repo}/pulls/update-branch`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ pullNumber })
+			});
+
+			const json = await res.json();
+			if (res.ok && json.success) {
+				addToast(`Updated branch for ${repo}#${pullNumber} with latest base`, 'success');
+				pullsLoaded = false;
+				await loadPulls();
+			} else {
+				addToast(json.error || 'Failed to update branch', 'error');
+			}
+		} catch (e) {
+			console.error(`Error updating branch for ${repo}#${pullNumber}:`, e);
+			addToast('Network error while updating branch', 'error');
+		} finally {
+			updatingBranchIds.delete(key);
+			updatingBranchIds = new Set(updatingBranchIds);
+		}
+	}
+
+	async function batchUpdateOutdated() {
+		if (outdatedPRs.length === 0) return;
+		if (!confirm(`Update all ${outdatedPRs.length} outdated branch(es) with latest base?`)) return;
+
+		updatingAllOutdated = true;
+		let updatedCount = 0;
+		for (const pr of outdatedPRs) {
+			const key = getPRKey(pr.repo, pr.number);
+			updatingBranchIds.add(key);
+			updatingBranchIds = new Set(updatingBranchIds);
+
+			try {
+				const res = await fetch(`/api/repo/${pr.repo}/pulls/update-branch`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ pullNumber: pr.number })
+				});
+				if (res.ok) updatedCount++;
+			} catch (e) {
+				console.error(`Failed to update ${pr.repo}#${pr.number}:`, e);
+			} finally {
+				updatingBranchIds.delete(key);
+				updatingBranchIds = new Set(updatingBranchIds);
+			}
+		}
+		updatingAllOutdated = false;
+		addToast(`Updated ${updatedCount}/${outdatedPRs.length} branches. Refreshing PRs...`, 'success');
+		pullsLoaded = false;
+		await loadPulls();
+	}
+
+	async function batchMergeSelected() {
+		if (selectedPRs.size === 0) return;
+		if (!confirm(`Squash and merge all ${selectedPRs.size} selected pull requests?`)) return;
+
+		batchMerging = true;
+		const itemsToMerge = Array.from(selectedPRs).map((key) => {
+			const [repo, numStr] = key.split('#');
+			return { repo, pullNumber: parseInt(numStr, 10) };
+		});
+
+		try {
+			const res = await fetch('/api/pulls/batch-merge', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ items: itemsToMerge })
+			});
+
+			const json = await res.json();
+			if (res.ok && json.success) {
+				const mergedCount = json.mergedCount || 0;
+				addToast(`Batch merge complete: ${mergedCount}/${itemsToMerge.length} PRs merged!`, 'success');
+				selectedPRs = new Set();
+				pullsLoaded = false;
+				await loadPulls();
+			} else {
+				addToast(json.error || 'Batch merge finished with some errors', 'error');
+				pullsLoaded = false;
+				await loadPulls();
+			}
+		} catch (e) {
+			console.error('Batch merge error:', e);
+			addToast('Network error during batch merge', 'error');
+		} finally {
+			batchMerging = false;
+		}
+	}
+
 	// Expanded repos for grouped PR/Issue views
 	let expandedPullsRepos = $state<Set<string>>(new Set());
 	let expandedIssuesRepos = $state<Set<string>>(new Set());
@@ -323,6 +454,10 @@
 			} else {
 				const json = await res.json();
 				addToast(json.error || 'Failed to merge PR', 'error');
+				if (json.isBehind) {
+					pullsLoaded = false;
+					await loadPulls();
+				}
 			}
 		} catch (e) {
 			console.error('Error merging PR:', e);
@@ -529,12 +664,15 @@
 				</div>
 				<span class="text-xs font-mono text-slate-500">SYS_ID: AUTONOMIC-AI-DEV</span>
 			</div>
-			<h1 class="text-3xl sm:text-4xl font-bold font-mono tracking-tight text-white flex items-center gap-3">
-				<span>Mission Control</span>
-				<span class="text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-mono font-medium tracking-wide">
-					{failingCount === 0 ? '100% NOMINAL' : `${failingCount} DEGRADED`}
-				</span>
-			</h1>
+			<div class="flex items-center gap-3 mb-1">
+				<AutonomicLogo size={36} animated={true} />
+				<h1 class="text-3xl sm:text-4xl font-bold font-mono tracking-tight text-white flex items-center gap-3">
+					<span>Mission Control</span>
+					<span class="text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-mono font-medium tracking-wide">
+						{failingCount === 0 ? '100% NOMINAL' : `${failingCount} DEGRADED`}
+					</span>
+				</h1>
+			</div>
 			<p class="text-slate-400 text-sm mt-1 font-sans">
 				Continuous integration, Darwin arm64 code signatures, and distributed organ telemetry.
 			</p>
@@ -937,21 +1075,95 @@
 		{/if}
 
 	{:else if activeTab === 'pulls'}
-		<!-- Pull Requests View -->
-		<section class="flex flex-col gap-4">
-			<div class="flex items-center justify-between">
-				<h2 class="text-lg font-bold font-mono text-white">Open Pull Requests</h2>
-				<button
-					onclick={() => {
-						pullsLoaded = false;
-						loadPulls();
-					}}
-					class="text-xs font-mono text-cyan-400 hover:underline flex items-center gap-1"
-				>
-					<RefreshCw size={12} class={loadingPulls ? 'animate-spin' : ''} />
-					<span>Reload PRs</span>
-				</button>
+		<!-- Pull Requests Operations Center -->
+		<section class="flex flex-col gap-5">
+			<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#0d1117] p-4 rounded-xl border border-white/10">
+				<div>
+					<div class="flex items-center gap-2 mb-1">
+						<h2 class="text-lg font-bold font-mono text-white">Ecosystem Pull Requests</h2>
+						<span class="text-xs font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+							{pulls.length} Open
+						</span>
+					</div>
+					<p class="text-xs text-slate-400 font-sans">
+						Batch merge verified PRs, inspect outdated base refs, and synchronize the distributed organ mesh.
+					</p>
+				</div>
+
+				<div class="flex items-center gap-2.5">
+					<button
+						onclick={() => {
+							pullsLoaded = false;
+							loadPulls();
+						}}
+						class="px-3 py-1.5 rounded-lg text-xs font-mono font-medium bg-[#161b22] text-slate-300 border border-white/10 hover:border-cyan-500/40 hover:text-cyan-400 transition-all flex items-center gap-1.5"
+						title="Reload pull requests"
+					>
+						<RefreshCw size={12} class={loadingPulls ? 'animate-spin' : ''} />
+						<span>Refresh</span>
+					</button>
+				</div>
 			</div>
+
+			<!-- Outdated Branches Warning Alert -->
+			{#if outdatedPRs.length > 0}
+				<div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-300 text-xs font-mono">
+					<div class="flex items-center gap-2.5">
+						<AlertCircle size={16} class="text-amber-400 shrink-0" />
+						<span>
+							<strong>{outdatedPRs.length} branch{outdatedPRs.length > 1 ? 'es are' : ' is'} out of date</strong> with the base branch. Direct merges are blocked by branch protection until updated.
+						</span>
+					</div>
+					{#if data.session}
+						<button
+							onclick={batchUpdateOutdated}
+							disabled={updatingAllOutdated}
+							class="px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 transition-all shrink-0 flex items-center gap-1.5 disabled:opacity-50"
+						>
+							<RefreshCw size={12} class={updatingAllOutdated ? 'animate-spin' : ''} />
+							<span>{updatingAllOutdated ? 'Updating...' : `Update All Outdated (${outdatedPRs.length})`}</span>
+						</button>
+					{/if}
+				</div>
+			{/if}
+
+			<!-- Multi-PR Batch Merge Toolbar -->
+			{#if data.session && pulls.length > 0}
+				<div class="flex flex-wrap items-center justify-between gap-3 bg-[#161b22] p-3 rounded-xl border border-white/[0.08] text-xs font-mono">
+					<div class="flex items-center gap-2">
+						<button
+							onclick={selectAllReady}
+							disabled={readyPRs.length === 0}
+							class="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-all disabled:opacity-40"
+						>
+							Select All Ready ({readyPRs.length})
+						</button>
+						{#if selectedPRs.size > 0}
+							<button
+								onclick={clearPRSelection}
+								class="px-2.5 py-1.5 rounded-lg bg-white/[0.04] text-slate-400 hover:text-white border border-white/10 transition-all"
+							>
+								Clear ({selectedPRs.size})
+							</button>
+						{/if}
+					</div>
+
+					<div class="flex items-center gap-3">
+						{#if selectedPRs.size > 0}
+							<button
+								onclick={batchMergeSelected}
+								disabled={batchMerging}
+								class="px-4 py-1.5 rounded-lg font-bold bg-gradient-to-r from-emerald-500 to-cyan-500 text-[#080b10] hover:brightness-110 transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2 disabled:opacity-50"
+							>
+								<GitMerge size={14} class={batchMerging ? 'animate-spin' : ''} />
+								<span>{batchMerging ? 'Merging Batch...' : `Batch Squash & Merge (${selectedPRs.size})`}</span>
+							</button>
+						{:else}
+							<span class="text-slate-500 text-[11px]">Select ready PRs to merge multiple at once</span>
+						{/if}
+					</div>
+				</div>
+			{/if}
 
 			{#if loadingPulls && pulls.length === 0}
 				<div class="flex items-center justify-center py-16 text-slate-500 font-mono text-xs gap-3">
@@ -985,35 +1197,114 @@
 							{#if expandedPullsRepos.has(repoName)}
 								<div class="divide-y divide-white/[0.06]">
 									{#each repoPulls as pr}
-										<div class="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/[0.02] transition-colors">
-											<div class="flex flex-col">
-												<div class="flex items-center gap-2 mb-1">
-													<a
-														href={pr.url}
-														target="_blank"
-														rel="noopener noreferrer"
-														class="font-mono font-semibold text-slate-200 hover:text-cyan-400 text-sm flex items-center gap-1.5"
-													>
-														<span>#{pr.number} {pr.title}</span>
-														<ExternalLink size={12} class="opacity-60" />
-													</a>
-												</div>
-												<div class="flex items-center gap-3 text-xs font-mono text-slate-500">
-													<span>by {pr.author?.login || 'unknown'}</span>
-													<span>•</span>
-													<span>{formatDate(pr.createdAt)}</span>
+										{@const prKey = getPRKey(repoName, pr.number)}
+										{@const isSelected = selectedPRs.has(prKey)}
+										<div class="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-white/[0.02] transition-colors {isSelected ? 'bg-cyan-500/[0.03]' : ''}">
+											<div class="flex items-start gap-3">
+												{#if data.session}
+													<input
+														type="checkbox"
+														checked={isSelected}
+														onchange={() => toggleSelectPR(repoName, pr.number)}
+														disabled={!pr.canMerge}
+														title={!pr.canMerge ? (pr.isBehind ? 'Cannot select: branch is outdated' : pr.isDirty ? 'Cannot select: conflicts' : 'Cannot select: blocked') : 'Select for batch merge'}
+														class="mt-1 h-4 w-4 rounded border-white/20 bg-[#161b22] text-cyan-400 focus:ring-cyan-500/30 cursor-pointer disabled:cursor-not-allowed disabled:opacity-30"
+													/>
+												{/if}
+
+												<div class="flex flex-col">
+													<div class="flex flex-wrap items-center gap-2 mb-1.5">
+														<a
+															href={pr.url}
+															target="_blank"
+															rel="noopener noreferrer"
+															class="font-mono font-semibold text-slate-200 hover:text-cyan-400 text-sm flex items-center gap-1.5"
+														>
+															<span>#{pr.number} {pr.title}</span>
+															<ExternalLink size={12} class="opacity-60" />
+														</a>
+
+														<!-- Comprehensive Status Badges -->
+														{#if pr.isBehind}
+															<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1">
+																<AlertCircle size={11} />
+																<span>Branch Outdated</span>
+															</span>
+														{/if}
+														{#if pr.isDirty}
+															<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30 flex items-center gap-1">
+																<XCircle size={11} />
+																<span>Conflicts</span>
+															</span>
+														{/if}
+														{#if pr.isBlocked && !pr.isBehind && !pr.isDirty}
+															<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-rose-500/10 text-rose-300 border border-rose-500/20 flex items-center gap-1">
+																<Clock size={11} />
+																<span>Checks Blocked</span>
+															</span>
+														{/if}
+														{#if pr.canMerge}
+															<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+																<CheckCircle size={11} />
+																<span>Ready to Merge</span>
+															</span>
+														{/if}
+														{#if pr.isDraft}
+															<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-slate-500/15 text-slate-400 border border-slate-500/30">
+																Draft
+															</span>
+														{/if}
+													</div>
+
+													<div class="flex flex-wrap items-center gap-3 text-xs font-mono text-slate-500">
+														<span>by {pr.author?.login || 'unknown'}</span>
+														<span>•</span>
+														<span>branch: <code class="text-cyan-300">{pr.headRefName}</code> → <code class="text-slate-400">{pr.baseRefName}</code></span>
+														<span>•</span>
+														<span>{formatDate(pr.createdAt)}</span>
+													</div>
 												</div>
 											</div>
 
-											<div class="flex items-center gap-3">
+											<!-- Action Controls -->
+											<div class="flex items-center gap-2.5 shrink-0 self-end md:self-center">
+												<!-- Outdated Branch Fix Button -->
+												{#if pr.isBehind && data.session}
+													<button
+														onclick={() => updateBranch(repoName, pr.number)}
+														disabled={updatingBranchIds.has(prKey)}
+														class="px-3 py-1.5 rounded-lg text-xs font-mono font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/25 transition-all flex items-center gap-1.5 disabled:opacity-50"
+														title="Bring this branch up to date with master"
+													>
+														<RefreshCw size={12} class={updatingBranchIds.has(prKey) ? 'animate-spin' : ''} />
+														<span>{updatingBranchIds.has(prKey) ? 'Updating...' : 'Update Branch'}</span>
+													</button>
+												{/if}
+
+												<!-- Merge Button with strict outdated/conflict protection -->
 												{#if data.session}
 													<button
 														onclick={() => mergePR(repoName, pr.number)}
-														disabled={mergingIds.has(pr.number)}
-														class="px-3 py-1.5 rounded-lg text-xs font-mono font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-all flex items-center gap-1.5 disabled:opacity-50"
+														disabled={mergingIds.has(pr.number) || pr.isBehind || pr.isDirty || !pr.canMerge}
+														title={pr.isBehind ? 'Branch is outdated. Update branch first.' : pr.isDirty ? 'PR has conflicts that must be resolved' : !pr.canMerge ? 'Blocked by pipeline checks' : 'Squash and merge pull request'}
+														class="px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed {
+															pr.canMerge
+																? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 shadow-sm'
+																: 'bg-[#161b22] text-slate-500 border border-white/10'
+														}"
 													>
 														<GitMerge size={13} class={mergingIds.has(pr.number) ? 'animate-spin' : ''} />
-														<span>{mergingIds.has(pr.number) ? 'Merging...' : 'Squash & Merge'}</span>
+														<span>
+															{mergingIds.has(pr.number)
+																? 'Merging...'
+																: pr.isBehind
+																	? 'Branch Outdated'
+																	: pr.isDirty
+																		? 'Has Conflicts'
+																		: !pr.canMerge
+																			? 'Blocked'
+																			: 'Squash & Merge'}
+														</span>
 													</button>
 												{/if}
 											</div>
@@ -1026,7 +1317,6 @@
 				</div>
 			{/if}
 		</section>
-
 	{:else if activeTab === 'issues'}
 		<!-- Issues View -->
 		<section class="flex flex-col gap-4">

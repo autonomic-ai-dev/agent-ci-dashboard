@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#050811" />
+    </radialGradient>
+
+    <!-- Core Cyan-Emerald Gradient -->
+    <linearGradient id="neonCyanEmerald" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f2fe" />
+      <stop offset="50%" stop-color="#00d2ff" />
+      <stop offset="100%" stop-color="#10b981" />
+    </linearGradient>
+
+    <!-- Secondary Indigo-Purple Gradient -->
+    <linearGradient id="neonIndigo" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#00f2fe" />
+    </linearGradient>
+
+    <!-- Outer Rim Glow -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <filter id="coreGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="18" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Dark Background Plate -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+  <rect width="512" height="512" rx="112" stroke="rgba(255, 255, 255, 0.08)" stroke-width="2" />
+
+  <!-- Outer Hexagonal Telemetry Ring -->
+  <polygon points="256,48 424,144 424,336 256,432 88,336 88,144"
+           fill="none"
+           stroke="rgba(0, 242, 254, 0.18)"
+           stroke-width="3"
+           stroke-dasharray="14 8" />
+
+  <!-- Middle Interconnected Circuit Hexagon -->
+  <polygon points="256,84 392,162 392,318 256,396 120,318 120,162"
+           fill="rgba(13, 17, 23, 0.65)"
+           stroke="url(#neonCyanEmerald)"
+           stroke-width="5"
+           filter="url(#glow)" />
+
+  <!-- Radial Neural Conduits connecting vertices to center -->
+  <line x1="256" y1="84" x2="256" y2="188" stroke="url(#neonCyanEmerald)" stroke-width="3" stroke-linecap="round" />
+  <line x1="392" y1="162" x2="310" y2="218" stroke="url(#neonCyanEmerald)" stroke-width="3" stroke-linecap="round" />
+  <line x1="392" y1="318" x2="310" y2="294" stroke="url(#neonCyanEmerald)" stroke-width="3" stroke-linecap="round" />
+  <line x1="256" y1="396" x2="256" y2="324" stroke="url(#neonCyanEmerald)" stroke-width="3" stroke-linecap="round" />
+  <line x1="120" y1="318" x2="202" y2="294" stroke="url(#neonCyanEmerald)" stroke-width="3" stroke-linecap="round" />
+  <line x1="120" y1="162" x2="202" y2="218" stroke="url(#neonCyanEmerald)" stroke-width="3" stroke-linecap="round" />
+
+  <!-- 6 Orbital Organ Node Markers -->
+  <circle cx="256" cy="84" r="10" fill="#00f2fe" filter="url(#glow)" />
+  <circle cx="256" cy="84" r="5" fill="#ffffff" />
+
+  <circle cx="392" cy="162" r="10" fill="#00e5ff" filter="url(#glow)" />
+  <circle cx="392" cy="162" r="5" fill="#ffffff" />
+
+  <circle cx="392" cy="318" r="10" fill="#10b981" filter="url(#glow)" />
+  <circle cx="392" cy="318" r="5" fill="#ffffff" />
+
+  <circle cx="256" cy="396" r="10" fill="#10b981" filter="url(#glow)" />
+  <circle cx="256" cy="396" r="5" fill="#ffffff" />
+
+  <circle cx="120" cy="318" r="10" fill="#6366f1" filter="url(#glow)" />
+  <circle cx="120" cy="318" r="5" fill="#ffffff" />
+
+  <circle cx="120" cy="162" r="10" fill="#00f2fe" filter="url(#glow)" />
+  <circle cx="120" cy="162" r="5" fill="#ffffff" />
+
+  <!-- Inner Dynamic Nucleus (Autonomic Brain Core) -->
+  <polygon points="256,192 312,224 312,288 256,320 200,288 200,224"
+           fill="rgba(0, 242, 254, 0.15)"
+           stroke="url(#neonCyanEmerald)"
+           stroke-width="4"
+           filter="url(#coreGlow)" />
+
+  <!-- Core Diamond Spark & Synaptic Pulse -->
+  <circle cx="256" cy="256" r="24" fill="url(#neonCyanEmerald)" filter="url(#coreGlow)" />
+  <circle cx="256" cy="256" r="12" fill="#ffffff" />
+
+  <polygon points="256,220 266,256 256,292 246,256" fill="#ffffff" opacity="0.85" />
+  <polygon points="220,256 256,266 292,256 256,246" fill="#ffffff" opacity="0.85" />
+</svg>

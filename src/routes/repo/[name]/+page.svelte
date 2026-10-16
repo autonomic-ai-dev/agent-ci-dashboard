@@ -216,6 +216,38 @@
 		}
 	}
 
+	let updatingBranchIds = $state<Set<number>>(new Set());
+
+	async function updateBranch(pullNumber: number) {
+		updatingBranchIds.add(pullNumber);
+		updatingBranchIds = new Set(updatingBranchIds);
+
+		try {
+			const res = await fetch(`/api/repo/${data.repo}/pulls/update-branch`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ pullNumber })
+			});
+
+			const json = await res.json();
+			if (res.ok && json.success) {
+				addToast(`Updated branch for PR #${pullNumber} with latest base`, 'success');
+				pulls = [];
+				pullsPageInfo = { hasNextPage: false, endCursor: null };
+				loadingPulls = false;
+				loadPulls();
+			} else {
+				addToast(json.error || 'Failed to update branch', 'error');
+			}
+		} catch (e) {
+			console.error('Error updating branch:', e);
+			addToast('Network error while updating branch', 'error');
+		} finally {
+			updatingBranchIds.delete(pullNumber);
+			updatingBranchIds = new Set(updatingBranchIds);
+		}
+	}
+
 	async function mergePR(pullNumber: number) {
 		if (!confirm('Merge this pull request?')) return;
 		mergingIds.add(pullNumber);
@@ -910,6 +942,22 @@
 												<span>Mergeable</span>
 											{/if}
 										</div>
+										<!-- Update Branch Button if Outdated -->
+										{#if pr.isBehind && data.session}
+											<button
+												onclick={(e) => {
+													e.preventDefault();
+													updateBranch(pr.number);
+												}}
+												disabled={updatingBranchIds.has(pr.number)}
+												class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-mono font-semibold rounded-lg bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 border border-amber-500/30 transition-all disabled:opacity-50"
+												title="Update branch with latest changes from base"
+											>
+												<RefreshCw size={12} class={updatingBranchIds.has(pr.number) ? 'animate-spin' : ''} />
+												<span>Update Branch</span>
+											</button>
+										{/if}
+
 										<!-- Merge Button -->
 										{#if data.session}
 											<button
@@ -917,12 +965,12 @@
 													e.preventDefault();
 													mergePR(pr.number);
 												}}
-												disabled={mergingIds.has(pr.number) || pr.mergeable !== 'MERGEABLE'}
-												title={isConflicting ? 'Has conflicts' : isUnknown ? 'Checking mergeability' : 'Merge PR'}
+												disabled={mergingIds.has(pr.number) || pr.isBehind || pr.isDirty || !pr.canMerge}
+												title={pr.isBehind ? 'Branch is outdated. Update branch first.' : pr.isDirty ? 'Has merge conflicts' : isUnknown ? 'Checking mergeability' : !pr.canMerge ? 'Blocked by checks or rules' : 'Squash & Merge PR'}
 												class="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500/20 border border-green-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 											>
 												<GitMerge size={14} class={mergingIds.has(pr.number) ? 'animate-spin' : ''} />
-												<span class="hidden sm:inline">{mergingIds.has(pr.number) ? 'Merging...' : 'Merge'}</span>
+												<span class="hidden sm:inline">{mergingIds.has(pr.number) ? 'Merging...' : pr.isBehind ? 'Branch Outdated' : pr.isDirty ? 'Conflicts' : 'Merge'}</span>
 											</button>
 										{/if}
 										<div

@@ -45,6 +45,8 @@ export async function GET(event) {
 							createdAt
 							updatedAt
 							mergeable
+							mergeStateStatus
+							viewerCanUpdateBranch
 							headRefName
 							baseRefName
 							author {
@@ -147,14 +149,35 @@ export async function GET(event) {
 				else overallStatus = 'success';
 			}
 
+			const mergeStateStatus = pr.mergeStateStatus || 'UNKNOWN';
+			const isBehind = mergeStateStatus === 'BEHIND';
+			const isDirty = mergeStateStatus === 'DIRTY' || pr.mergeable === 'CONFLICTING';
+			const isBlocked = mergeStateStatus === 'BLOCKED' || overallStatus === 'failure';
+			const isDraft = Boolean(pr.isDraft) || mergeStateStatus === 'DRAFT';
+			const canMerge =
+				!isBehind &&
+				!isDirty &&
+				!isDraft &&
+				pr.mergeable !== 'CONFLICTING' &&
+				(mergeStateStatus === 'CLEAN' ||
+					mergeStateStatus === 'HAS_HOOKS' ||
+					mergeStateStatus === 'UNSTABLE' ||
+					(overallStatus === 'success' && mergeStateStatus !== 'BLOCKED'));
+
 			return {
 				number: pr.number,
 				title: pr.title,
-				isDraft: pr.isDraft,
+				isDraft,
 				url: pr.url,
 				createdAt: pr.createdAt,
 				updatedAt: pr.updatedAt,
 				mergeable: pr.mergeable,
+				mergeStateStatus,
+				isBehind,
+				isDirty,
+				isBlocked,
+				canMerge,
+				viewerCanUpdateBranch: pr.viewerCanUpdateBranch !== false,
 				headRefName: pr.headRefName,
 				baseRefName: pr.baseRefName,
 				author: pr.author

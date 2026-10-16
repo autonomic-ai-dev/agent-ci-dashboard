@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="favGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f2fe" />
+      <stop offset="100%" stop-color="#10b981" />
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="#080b10" />
+  <polygon points="64,16 104,38 104,90 64,112 24,90 24,38" fill="rgba(13, 17, 23, 0.8)" stroke="url(#favGrad)" stroke-width="4" />
+  <line x1="64" y1="16" x2="64" y2="48" stroke="url(#favGrad)" stroke-width="2.5" />
+  <line x1="104" y1="38" x2="80" y2="58" stroke="url(#favGrad)" stroke-width="2.5" />
+  <line x1="104" y1="90" x2="80" y2="70" stroke="url(#favGrad)" stroke-width="2.5" />
+  <line x1="64" y1="112" x2="64" y2="80" stroke="url(#favGrad)" stroke-width="2.5" />
+  <line x1="24" y1="90" x2="48" y2="70" stroke="url(#favGrad)" stroke-width="2.5" />
+  <line x1="24" y1="38" x2="48" y2="58" stroke="url(#favGrad)" stroke-width="2.5" />
+  <circle cx="64" cy="64" r="10" fill="url(#favGrad)" />
+  <circle cx="64" cy="64" r="4" fill="#ffffff" />
+</svg>
