@@ -226,8 +226,8 @@
 	}
 
 	async function rerunLatest() {
-		const latestCommit = commits[0];
-		const firstRun = latestCommit?.runs?.[0];
+		const targetCommit = commits.find((c: any) => c.runs && c.runs.length > 0) || commits[0];
+		const firstRun = targetCommit?.runs?.[0];
 		if (firstRun?.id) {
 			await rerunWorkflow(String(firstRun.id), 'all');
 		} else {
@@ -566,7 +566,13 @@
 		}
 	}
 
-	let latestStatus = $derived(commits && commits.length > 0 ? commits[0].status : 'unknown');
+	let latestTestedCommit = $derived(commits?.find((c: any) => c.status !== 'no-runs'));
+	let latestStatus = $derived(
+		latestTestedCommit ? latestTestedCommit.status : commits && commits.length > 0 ? commits[0].status : 'unknown'
+	);
+	let isHeadDocOnly = $derived(
+		Boolean(commits && commits.length > 0 && commits[0].status === 'no-runs' && latestTestedCommit)
+	);
 </script>
 
 <svelte:head>
@@ -666,6 +672,9 @@
 								{/if}
 							</span>
 							<span>{latestStatus}</span>
+							{#if isHeadDocOnly}
+								<span class="text-[10px] text-cyan-400 lowercase font-mono font-normal tracking-normal">(docs at head)</span>
+							{/if}
 						</div>
 					</div>
 					{#if data.description}
@@ -1039,6 +1048,11 @@
 													{/if}
 												</div>
 											{/each}
+										</div>
+									{:else if commit.status === 'no-runs'}
+										<div class="pt-2 border-t border-white/[0.04] text-[11px] font-mono text-slate-500 italic flex items-center gap-1.5">
+											<span class="inline-block w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+											<span>Documentation or chore commit — CI pipeline execution was bypassed</span>
 										</div>
 									{/if}
 								</div>
