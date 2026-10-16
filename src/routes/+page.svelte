@@ -136,8 +136,8 @@
 	};
 
 	// Local state for polling and filtering
-	let initialStatuses = data.statuses;
-	let statuses = $state(initialStatuses);
+	const getInitialStatuses = () => data.statuses;
+	let statuses = $state(getInitialStatuses());
 	let lastUpdated = $state(new Date());
 	let searchQuery = $state('');
 	let activeStatusFilter = $state('all');
