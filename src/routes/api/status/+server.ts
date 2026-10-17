@@ -96,6 +96,11 @@ export async function GET(event) {
 
 			fragment RepoDetails on Repository {
 				name
+				releases(first: 1, orderBy: {field: CREATED_AT, direction: DESC}) {
+					nodes {
+						tagName
+					}
+				}
 				refs(refPrefix: "refs/tags/", last: 1) {
 					nodes {
 						name
@@ -147,8 +152,9 @@ export async function GET(event) {
 		const statuses = AGENT_REPOS.map((repo, idx) => {
 			const repoData = response[`repo${idx}`];
 
+			const releaseTag = repoData?.releases?.nodes?.[0]?.tagName;
 			const latestTagNode = repoData?.refs?.nodes?.[0];
-			const tagName = latestTagNode ? latestTagNode.name : null;
+			const tagName = releaseTag || (latestTagNode ? latestTagNode.name : null);
 			const tagTarget = latestTagNode?.target || null;
 
 			if (!repoData || !repoData.defaultBranchRef) {

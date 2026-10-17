@@ -1,4 +1,5 @@
 import type { LayoutServerLoad } from './$types';
+import pkg from '../../package.json';
 
 export const load: LayoutServerLoad = async (event) => {
 	let session = null;
@@ -9,6 +10,7 @@ export const load: LayoutServerLoad = async (event) => {
 	}
 
 	return {
-		session
+		session,
+		ecosystemVersion: `v${pkg.version}`
 	};
 };

@@ -625,6 +625,7 @@
 	let operationalCount = $derived(
 		statuses.filter((s: any) => s.status === 'success' || s.status === 'pending' || s.status === 'in_progress').length
 	);
+	let baselineTag = $derived(filteredStatuses.find((s: any) => s.tag)?.tag || statuses.find((s: any) => s.tag)?.tag || data.ecosystemVersion || '');
 
 	let categoryCounts = $derived.by(() => {
 		const counts = { all: statuses.length, core: 0, execution: 0, sensory: 0, interface: 0 };
@@ -828,7 +829,7 @@
 				<Layers size={14} class="text-indigo-400" />
 			</div>
 			<div class="flex items-baseline gap-2 mb-1">
-				<span class="text-xl sm:text-2xl font-mono font-bold text-white tracking-tight">{filteredStatuses[0]?.tag || 'v1.0.0-beta.2'}</span>
+				<span class="text-xl sm:text-2xl font-mono font-bold text-white tracking-tight">{baselineTag || '—'}</span>
 			</div>
 			<div class="text-[11px] font-sans text-slate-400 flex items-center justify-between pt-2 border-t border-white/[0.06]">
 				<span>Doctor min compatibility</span>
@@ -1196,7 +1197,7 @@
 				</div>
 			{:else if pulls.length === 0}
 				<div class="text-center py-16 bg-[#0d1117] border border-white/10 rounded-xl font-mono text-sm text-slate-400">
-					All organ PRs are merged. Master branches synchronized at {filteredStatuses[0]?.tag || 'v1.0.0-beta.2'}.
+					All organ PRs are merged. Master branches synchronized{#if baselineTag} at {baselineTag}{/if}.
 				</div>
 			{:else}
 				<div class="flex flex-col gap-4">

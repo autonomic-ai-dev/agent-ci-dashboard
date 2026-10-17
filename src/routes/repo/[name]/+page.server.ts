@@ -210,6 +210,8 @@ export async function load(event) {
 		const releases = repoData.releases.nodes.map((node: any) => ({
 			name: node.name || node.tagName,
 			tag: node.tagName,
+			tagName: node.tagName,
+			tag_name: node.tagName,
 			descriptionHtml: node.descriptionHTML || '',
 			descriptionHTML: node.descriptionHTML || '',
 			url: node.url,
@@ -227,6 +229,7 @@ export async function load(event) {
 		// Get tag commit CI runs for merging with latest commit
 		const tagRef = repoData?.refs?.nodes?.[0] || null;
 		const tagCommitSha = tagRef?.target?.oid || null;
+		const latestTag = releases[0]?.tag || tagRef?.name || null;
 
 		// Map recent commits and their CI runs
 		const commits =
@@ -325,6 +328,7 @@ export async function load(event) {
 			readmeHtml,
 			releases,
 			releasesPageInfo,
+			latestTag,
 			commits,
 			commitsPageInfo,
 			repoUrl: `https://github.com/${owner}/${repo}`,
