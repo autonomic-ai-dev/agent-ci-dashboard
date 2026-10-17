@@ -173,26 +173,76 @@
 
 	let observerTarget = $state<HTMLElement | null>(null);
 
+	let terminalPollingInterval: any = null;
+
+	function closeTerminal() {
+		terminalOpen = false;
+		if (terminalPollingInterval) {
+			clearInterval(terminalPollingInterval);
+			terminalPollingInterval = null;
+		}
+	}
+
+	async function fetchTerminalLogs(isPolling = false) {
+		if (!terminalRunId) return;
+		if (!isPolling) {
+			terminalLoading = true;
+		}
+
+		try {
+			const res = await fetch(`/api/repo/${data.repo}/logs?run_id=${terminalRunId}`);
+			const json = await res.json().catch(() => null);
+
+			if (json && json.logs) {
+				terminalLogs = json.logs;
+				if (json.status) {
+					terminalRunStatus = json.status;
+				}
+				if (!json.inProgress && terminalPollingInterval) {
+					clearInterval(terminalPollingInterval);
+					terminalPollingInterval = null;
+				}
+			} else if (res.status === 401 || res.status === 403) {
+				terminalLogs = json?.error || 'Authentication required. Please sign in with GitHub or check token permissions.';
+			} else {
+				terminalLogs = json?.error ? `Error: ${json.error}` : 'Failed to fetch logs.';
+			}
+		} catch (e) {
+			console.error('Failed to fetch logs:', e);
+			if (!isPolling) {
+				terminalLogs = 'Failed to fetch logs.';
+			}
+		} finally {
+			if (!isPolling) {
+				terminalLoading = false;
+			}
+		}
+	}
+
 	async function viewLogs(runId: string, title: string, status: string) {
 		terminalOpen = true;
 		terminalTitle = title;
 		terminalRunId = runId;
 		terminalRunStatus = status;
 		terminalLogs = '';
-		terminalLoading = true;
 
-		try {
-			const res = await fetch(`/api/repo/${data.repo}/logs?run_id=${runId}`);
-			const json = await res.json();
-			if (json.success) {
-				terminalLogs = json.logs;
-			} else {
-				terminalLogs = `Error: ${json.error}`;
-			}
-		} catch (e) {
-			terminalLogs = 'Failed to fetch logs.';
-		} finally {
-			terminalLoading = false;
+		if (terminalPollingInterval) {
+			clearInterval(terminalPollingInterval);
+			terminalPollingInterval = null;
+		}
+
+		await fetchTerminalLogs(false);
+
+		// If running, poll every 4 seconds
+		if (terminalRunStatus === 'in_progress' || terminalRunStatus === 'queued') {
+			terminalPollingInterval = setInterval(() => {
+				if (terminalOpen && (terminalRunStatus === 'in_progress' || terminalRunStatus === 'queued')) {
+					fetchTerminalLogs(true);
+				} else if (terminalPollingInterval) {
+					clearInterval(terminalPollingInterval);
+					terminalPollingInterval = null;
+				}
+			}, 4000);
 		}
 	}
 
@@ -1454,13 +1504,33 @@
 					<span class="w-3 h-3 rounded-full bg-yellow-500/80 inline-block"></span>
 					<span class="w-3 h-3 rounded-full bg-green-500/80 inline-block"></span>
 					<span class="text-slate-400 ml-2">CONSOLE // {terminalTitle} (Run #{terminalRunId})</span>
+					{#if terminalRunStatus === 'in_progress' || terminalRunStatus === 'queued'}
+						<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-[10px] font-mono text-cyan-400 font-semibold ml-2">
+							<span class="relative flex h-2 w-2">
+								<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+								<span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+							</span>
+							LIVE
+						</span>
+					{/if}
 				</div>
-				<button
-					onclick={() => (terminalOpen = false)}
-					class="text-slate-400 hover:text-white transition-colors p-1"
-				>
-					<X size={16} />
-				</button>
+				<div class="flex items-center gap-2">
+					<button
+						onclick={() => fetchTerminalLogs(false)}
+						disabled={terminalLoading}
+						class="text-slate-400 hover:text-white transition-colors bg-[#161b22] hover:bg-white/10 p-1.5 rounded flex items-center gap-1 text-[11px]"
+						title="Refresh logs"
+					>
+						<RefreshCw size={13} class={terminalLoading ? 'animate-spin' : ''} />
+						<span class="text-[10px]">Refresh</span>
+					</button>
+					<button
+						onclick={closeTerminal}
+						class="text-slate-400 hover:text-white transition-colors p-1"
+					>
+						<X size={16} />
+					</button>
+				</div>
 			</div>
 
 			<!-- Terminal Output -->
