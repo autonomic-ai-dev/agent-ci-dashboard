@@ -625,7 +625,7 @@
 	let operationalCount = $derived(
 		statuses.filter((s: any) => s.status === 'success' || s.status === 'pending' || s.status === 'in_progress').length
 	);
-	let baselineTag = $derived(filteredStatuses.find((s: any) => s.tag)?.tag || statuses.find((s: any) => s.tag)?.tag || data.ecosystemVersion || '');
+	let baselineTag = $derived(data.ecosystemVersion || filteredStatuses.find((s: any) => s.tag)?.tag || statuses.find((s: any) => s.tag)?.tag || '');
 
 	let categoryCounts = $derived.by(() => {
 		const counts = { all: statuses.length, core: 0, execution: 0, sensory: 0, interface: 0 };
