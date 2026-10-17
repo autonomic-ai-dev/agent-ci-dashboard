@@ -1,0 +1,7 @@
+[verify]
+commands = [
+  "npm run check",
+  "npm run build",
+  ".verify/playbooks/verify_usage_page.sh",
+  ".verify/playbooks/verify_full_suite.sh",
+]

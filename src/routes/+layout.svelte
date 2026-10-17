@@ -34,16 +34,34 @@
 		<header
 			class="sticky top-0 z-50 flex items-center justify-between px-4 sm:px-8 py-2.5 bg-[#0d1117]/90 backdrop-blur-xl border-b border-white/[0.08]"
 		>
-			<a
-				href="/"
-				class="flex items-center gap-3 text-slate-300 hover:text-cyan-400 transition-all group"
-			>
-				<AutonomicLogo size={28} animated={true} />
-				<div class="flex items-baseline gap-2">
-					<span class="text-sm font-bold tracking-widest uppercase font-mono text-cyan-400">Autonomic</span>
-					<span class="text-xs font-mono text-slate-400 tracking-wider hidden sm:inline">Mission Control</span>
-				</div>
-			</a>
+			<div class="flex items-center gap-6">
+				<a
+					href="/"
+					class="flex items-center gap-3 text-slate-300 hover:text-cyan-400 transition-all group"
+				>
+					<AutonomicLogo size={28} animated={true} />
+					<div class="flex items-baseline gap-2">
+						<span class="text-sm font-bold tracking-widest uppercase font-mono text-cyan-400">Autonomic</span>
+						<span class="text-xs font-mono text-slate-400 tracking-wider hidden sm:inline">Mission Control</span>
+					</div>
+				</a>
+
+				<nav class="hidden sm:flex items-center gap-1 font-mono text-xs">
+					<a
+						href="/"
+						class="px-2.5 py-1 rounded-md text-slate-400 hover:text-white hover:bg-white/[0.04] transition-colors"
+					>
+						Overview
+					</a>
+					<a
+						href="/usage"
+						class="px-2.5 py-1 rounded-md text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors flex items-center gap-1"
+					>
+						<Activity size={12} class="text-cyan-400" />
+						Usage & Budget
+					</a>
+				</nav>
+			</div>
 
 			<!-- Center Avionics Telemetry Indicator -->
 			<div class="hidden md:flex items-center gap-3 px-3.5 py-1 rounded-full bg-[#161b22] border border-white/10 text-[11px] font-mono">
