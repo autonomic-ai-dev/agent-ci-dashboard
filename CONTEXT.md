@@ -1,7 +1,7 @@
 # agent-ci-dashboard — Deep Operational & Architectural Context for Agents
 
 > **Web Mission Control, CI/CD Telemetry Console & PR Merge Queue** — In-depth architectural guide, SvelteKit 2 telemetry components, GitHub GraphQL batch queries, Webhooks, and deployment runbooks for `agent-ci-dashboard`.  
-> **Ecosystem Version Baseline:** `v1.0.0-beta.3`  
+> **Ecosystem Version Baseline:** `v1.0.0-beta.3.2`  
 > **Documentation Hub:** [https://autonomic-ai.dev/docs/telemetry](https://autonomic-ai.dev/docs/telemetry) · [Architecture Hub](https://autonomic-ai.dev/docs/architecture)  
 > **Framework:** SvelteKit 2 · Vite · Tailwind CSS v4 · Vercel Adapter · Local Port `:5173`
 
