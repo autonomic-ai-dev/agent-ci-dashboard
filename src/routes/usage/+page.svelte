@@ -12,10 +12,48 @@
 		CheckCircle2,
 		Radio
 	} from '@lucide/svelte';
+	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
-	let usage = $derived(data.usage);
+	let liveUsage = $state<PageData['usage'] | null>(null);
+
+	onMount(() => {
+		if (typeof window === 'undefined') return;
+		liveUsage = { ...data.usage };
+		const es = new EventSource('/api/telemetry/stream');
+		es.addEventListener('usage_event', (e) => {
+			try {
+				if (!liveUsage) liveUsage = { ...data.usage };
+				const event = JSON.parse(e.data);
+				liveUsage.today_turns += 1;
+				const cost = typeof event.estimated_cost_usd === 'number' ? event.estimated_cost_usd : 0;
+				liveUsage.today_spend_usd += cost;
+				liveUsage.month_spend_usd += cost;
+				liveUsage.last_synced_at = new Date().toISOString();
+			} catch {
+				// ignore parse error
+			}
+		});
+		es.addEventListener('quota_snapshot', (e) => {
+			try {
+				if (!liveUsage) liveUsage = { ...data.usage };
+				const q = JSON.parse(e.data);
+				const existing = liveUsage.quotas.find((x) =>
+					x.provider.toLowerCase().includes(q.provider.toLowerCase())
+				);
+				if (existing && typeof q.utilization_pct === 'number') {
+					existing.utilization_pct = q.utilization_pct;
+				}
+				liveUsage.last_synced_at = new Date().toISOString();
+			} catch {
+				// ignore parse error
+			}
+		});
+		return () => es.close();
+	});
+
+	let usage = $derived(liveUsage ?? data.usage);
 
 	function formatCurrency(val: number): string {
 		return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
