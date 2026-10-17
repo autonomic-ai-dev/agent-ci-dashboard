@@ -1233,7 +1233,7 @@
 										onclick={() => toggleSelectPR(pr.number)}
 										disabled={!pr.canMerge}
 										class="mt-0.5 text-slate-400 hover:text-cyan-400 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
-										title={!pr.canMerge ? (pr.isBehind ? 'Branch outdated: click Update Branch' : pr.isDirty ? 'Merge conflicts' : 'Blocked by checks') : 'Select for batch merge'}
+										title={!pr.canMerge ? (pr.isBehind ? 'Branch outdated: click Update Branch' : pr.isDirty ? 'Merge conflicts' : pr.status === 'failure' || pr.status === 'cancelled' ? 'Checks failed' : pr.status === 'in_progress' || pr.status === 'queued' ? 'Checks running' : 'Blocked by branch protection') : 'Select for batch merge'}
 									>
 										{#if selectedPRs.has(pr.number)}
 											<CheckSquare size={15} class="text-cyan-400" />
@@ -1257,6 +1257,17 @@
 										<span>{pr.headRefName} → {pr.baseRefName}</span>
 										{#if pr.author}
 											<span class="text-slate-300">by @{pr.author.login}</span>
+										{/if}
+										{#if pr.status === 'failure' || pr.status === 'cancelled'}
+											<span class="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30 flex items-center gap-1">
+												<XCircle size={10} />
+												<span>Checks Failed</span>
+											</span>
+										{:else if pr.status === 'in_progress' || pr.status === 'queued'}
+											<span class="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 flex items-center gap-1">
+												<RefreshCw size={10} class="animate-spin" />
+												<span>Checks Running</span>
+											</span>
 										{/if}
 									</div>
 								</div>
@@ -1286,11 +1297,14 @@
 										{@const CheckIcon = getStatusIcon(check.status)}
 										<button
 											onclick={() => check.id && viewLogs(check.id, check.name, check.status)}
-											class="px-2 py-0.5 rounded bg-[#080b10] border border-white/10 text-[10px] font-mono text-slate-300 hover:text-cyan-300 hover:border-cyan-500/30 transition-colors flex items-center gap-1"
-											title={check.name}
+											class="px-2 py-0.5 rounded bg-[#080b10] border text-[10px] font-mono transition-colors flex items-center gap-1 {check.status === 'failure' || check.status === 'cancelled' ? 'border-rose-500/40 text-rose-300 hover:border-rose-500/70 bg-rose-500/5' : check.status === 'in_progress' || check.status === 'queued' ? 'border-cyan-500/40 text-cyan-300 hover:border-cyan-500/70' : 'border-white/10 text-slate-300 hover:text-cyan-300 hover:border-cyan-500/30'}"
+											title="{check.name} ({check.status})"
 										>
-											<CheckIcon size={10} class={check.status === 'success' ? 'text-emerald-400' : check.status === 'failure' ? 'text-red-400' : 'text-yellow-400'} />
-											<span class="max-w-[100px] truncate">{check.name}</span>
+											<CheckIcon size={10} class={check.status === 'success' ? 'text-emerald-400' : check.status === 'failure' ? 'text-rose-400' : check.status === 'in_progress' || check.status === 'queued' ? 'text-cyan-400 animate-spin' : 'text-amber-400'} />
+											<span class="max-w-[120px] truncate">{check.name}</span>
+											{#if check.status === 'failure' || check.status === 'cancelled'}
+												<span class="text-[9px] text-rose-400 font-bold uppercase ml-0.5">{check.status}</span>
+											{/if}
 										</button>
 									{/each}
 								</div>
@@ -1304,17 +1318,33 @@
 											<span class="text-amber-400">Outdated</span>
 										{:else if pr.isDirty}
 											<span class="text-red-400">Conflicts</span>
+										{:else if pr.status === 'failure' || pr.status === 'cancelled'}
+											<span class="text-rose-400 font-semibold">Checks Failed</span>
+										{:else if pr.status === 'in_progress' || pr.status === 'queued'}
+											<span class="text-cyan-400">Checks Running</span>
 										{:else if pr.canMerge}
 											<span class="text-emerald-400">Ready to Merge</span>
 										{:else}
-											<span class="text-yellow-400">Checks Pending</span>
+											<span class="text-slate-400">Blocked</span>
 										{/if}
 									</span>
 
 									<button
 										onclick={() => mergePR(pr.number)}
 										disabled={mergingIds.has(pr.number) || pr.isBehind || pr.isDirty || !pr.canMerge}
-										title={pr.isBehind ? 'Branch is outdated. Click "Update Branch" first.' : pr.isDirty ? 'Merge conflicts detected' : !pr.canMerge ? 'Blocked by branch protection or checks' : 'Squash & merge pull request'}
+										title={
+											pr.isBehind
+												? 'Branch is outdated. Click "Update Branch" first.'
+												: pr.isDirty
+													? 'Merge conflicts detected'
+													: pr.status === 'failure' || pr.status === 'cancelled'
+														? 'Cannot merge: CI checks failed'
+														: pr.status === 'in_progress' || pr.status === 'queued'
+															? 'Cannot merge: CI checks are still running'
+															: !pr.canMerge
+																? 'Blocked by branch protection or reviews'
+																: 'Squash & merge pull request'
+										}
 										class={`px-3 py-1 rounded text-xs font-mono font-semibold flex items-center gap-1.5 transition-all ${
 											pr.canMerge
 												? 'bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 border border-emerald-500/30'
@@ -1322,7 +1352,21 @@
 										}`}
 									>
 										<GitMerge size={12} class={mergingIds.has(pr.number) ? 'animate-spin' : ''} />
-										<span>{mergingIds.has(pr.number) ? 'Merging...' : pr.isBehind ? 'Branch Outdated' : pr.isDirty ? 'Conflicts' : 'Squash & Merge'}</span>
+										<span>{
+											mergingIds.has(pr.number)
+												? 'Merging...'
+												: pr.isBehind
+													? 'Branch Outdated'
+													: pr.isDirty
+														? 'Conflicts'
+														: pr.status === 'failure' || pr.status === 'cancelled'
+															? 'Checks Failed'
+															: pr.status === 'in_progress' || pr.status === 'queued'
+																? 'Checks Running'
+																: !pr.canMerge
+																	? 'Blocked'
+																	: 'Squash & Merge'
+										}</span>
 									</button>
 								</div>
 							{/if}
