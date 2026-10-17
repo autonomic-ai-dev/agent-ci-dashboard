@@ -59,14 +59,48 @@ export async function POST(event) {
 			);
 		}
 
-		await octokit.rest.pulls.merge({
-			owner: GITHUB_OWNER,
-			repo,
-			pull_number: pullNumber,
-			merge_method: 'squash'
-		});
+		try {
+			await octokit.rest.pulls.merge({
+				owner: GITHUB_OWNER,
+				repo,
+				pull_number: pullNumber,
+				merge_method: 'squash'
+			});
 
-		return json({ success: true });
+			return json({ success: true, merged: true });
+		} catch (mergeErr: any) {
+			const errMsg = mergeErr?.response?.data?.message || mergeErr.message || '';
+			if (errMsg.toLowerCase().includes('merge queue')) {
+				console.log(`Repository ruleset requires Merge Queue for ${repo}#${pullNumber}. Enqueueing via GraphQL...`);
+				try {
+					const nodeId = prInfo.data.node_id;
+					const mutation = `
+						mutation Enqueue($pullRequestId: ID!) {
+							enqueuePullRequest(input: { pullRequestId: $pullRequestId }) {
+								mergeQueueEntry {
+									id
+									state
+									position
+								}
+							}
+						}
+					`;
+					const gqlRes: any = await octokit.graphql(mutation, { pullRequestId: nodeId });
+					const entry = gqlRes?.enqueuePullRequest?.mergeQueueEntry;
+					return json({
+						success: true,
+						enqueued: true,
+						position: entry?.position ?? 1,
+						message: `PR #${pullNumber} added to merge queue (position ${entry?.position ?? 1})`
+					});
+				} catch (gqlErr: any) {
+					console.error(`Failed to enqueue PR #${pullNumber} into merge queue:`, gqlErr);
+					const gqlMsg = gqlErr?.errors?.[0]?.message || gqlErr?.message || errMsg;
+					return json({ success: false, error: gqlMsg }, { status: 422 });
+				}
+			}
+			throw mergeErr;
+		}
 	} catch (e: any) {
 		console.error(`Failed to merge PR #${pullNumber} for ${repo}:`, e);
 		const message = e?.response?.data?.message || e.message || 'Failed to merge pull request';

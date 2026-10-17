@@ -14,9 +14,9 @@ export const load: LayoutServerLoad = async (event) => {
 
 	return {
 		session,
-		ecosystemVersion: `v${formulae.autonomic}`,
+		ecosystemVersion: `v${formulae.stack}`,
 		stackVersion: `v${formulae.stack}`,
-		formulaVersion: `v${formulae.autonomic}`,
+		formulaVersion: `v${formulae.stack}`,
 		organVersions: formulae.organs
 	};
 };

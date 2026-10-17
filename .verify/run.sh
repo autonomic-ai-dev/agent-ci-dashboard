@@ -10,6 +10,9 @@ cd "$REPO_ROOT"
 echo "==> Running Playbook: Usage Page..."
 "$DIR/playbooks/verify_usage_page.sh"
 
+echo "==> Running Playbook: Merge Queue & Stack Versioning..."
+"$DIR/playbooks/verify_merge_queue_and_versioning.sh"
+
 echo "==> Running Playbook: Full Suite..."
 "$DIR/playbooks/verify_full_suite.sh"
 

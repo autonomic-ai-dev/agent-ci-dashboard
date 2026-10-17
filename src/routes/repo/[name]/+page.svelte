@@ -335,7 +335,11 @@
 				const nextSel = new Set(selectedPRs);
 				nextSel.delete(pullNumber);
 				selectedPRs = nextSel;
-				addToast(`PR #${pullNumber} squashed & merged`, 'success');
+				if (json.enqueued) {
+					addToast(json.message || `PR #${pullNumber} added to merge queue (position ${json.position ?? 1})`, 'success');
+				} else {
+					addToast(`PR #${pullNumber} squashed & merged`, 'success');
+				}
 			} else {
 				addToast(json.error || 'Failed to merge PR', 'error');
 			}
@@ -366,7 +370,12 @@
 			const json = await res.json();
 			if (res.ok && json.success) {
 				const mergedCount = json.mergedCount || 0;
-				addToast(`Batch merge complete: ${mergedCount}/${items.length} PRs merged!`, 'success');
+				const enqueuedCount = json.enqueuedCount || 0;
+				if (enqueuedCount > 0) {
+					addToast(`Batch operation complete: ${mergedCount} merged, ${enqueuedCount} queued in merge queue!`, 'success');
+				} else {
+					addToast(`Batch merge complete: ${mergedCount}/${items.length} PRs merged!`, 'success');
+				}
 				selectedPRs = new Set();
 				pulls = [];
 				pullsLoaded = false;
