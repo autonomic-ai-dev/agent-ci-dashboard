@@ -80,7 +80,9 @@ export async function GET(event) {
 			});
 
 			const run = runDetails.data;
-			const isRunning = run.status === 'in_progress' || run.status === 'queued';
+			const isRunning = ['in_progress', 'queued', 'waiting', 'pending', 'requested'].includes(
+				run.status?.toLowerCase() || ''
+			);
 
 			if (isRunning) {
 				setHeaders({
