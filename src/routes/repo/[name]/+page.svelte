@@ -67,6 +67,7 @@
 	let releases = $state<any[]>([]);
 	let releasesPageInfo = $state<any>({ hasNextPage: false, endCursor: null });
 	let loadingReleases = $state(false);
+	let currentReleaseTag = $derived(releases[0]?.tag || releases[0]?.tag_name || data.latestTag || '');
 
 	let commits = $state<any[]>([]);
 	let commitsPageInfo = $state<any>({ hasNextPage: false, endCursor: null });
@@ -616,9 +617,11 @@
 				<span class="text-slate-500">REPOSITORIES</span>
 				<span class="text-white/20">/</span>
 				<span class="text-cyan-300 font-bold tracking-wide">{data.repo}</span>
-				<span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 uppercase">
-					ORGAN {releases[0]?.tag_name || 'v1.0.0-beta.2'}
-				</span>
+				{#if currentReleaseTag}
+					<span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 uppercase">
+						ORGAN {currentReleaseTag}
+					</span>
+				{/if}
 			</div>
 
 			<!-- System Indicators -->
@@ -793,7 +796,7 @@
 					</div>
 					<div class="flex justify-between items-center py-1">
 						<span class="text-slate-400">Release Tag:</span>
-						<span class="text-cyan-300 font-semibold">{releases[0]?.tag_name || 'v1.0.0-beta.2'}</span>
+						<span class="text-cyan-300 font-semibold">{currentReleaseTag || '—'}</span>
 					</div>
 				</div>
 			</div>
@@ -1376,7 +1379,7 @@
 				</div>
 			{:else}
 				<div class="bg-[#0d1117] border border-white/10 rounded-xl p-6 text-center text-slate-400 font-mono text-xs">
-					No active pull requests. Master synchronized at {releases[0]?.tag_name || 'v1.0.0-beta.2'}.
+					No active pull requests. Master synchronized{#if currentReleaseTag} at {currentReleaseTag}{/if}.
 				</div>
 			{/if}
 

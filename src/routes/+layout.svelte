@@ -55,7 +55,7 @@
 				<span class="text-white/20">|</span>
 				<span class="text-slate-300">DARWIN-ARM64</span>
 				<span class="text-white/20">|</span>
-				<span class="text-cyan-400">v1.0.0-beta.2</span>
+				<span class="text-cyan-400">{data.ecosystemVersion || '—'}</span>
 			</div>
 
 			<div
