@@ -496,28 +496,77 @@
 		}
 	}
 
+	let terminalPollingInterval: any = null;
+
+	function closeTerminal() {
+		terminalOpen = false;
+		if (terminalPollingInterval) {
+			clearInterval(terminalPollingInterval);
+			terminalPollingInterval = null;
+		}
+	}
+
+	async function fetchTerminalLogs(isPolling = false) {
+		if (!terminalRunId || !terminalRepo) return;
+		if (!isPolling) {
+			terminalLoading = true;
+		}
+
+		try {
+			const res = await fetch(`/api/repo/${terminalRepo}/logs?runId=${terminalRunId}`);
+			const json = await res.json().catch(() => null);
+
+			if (json && json.logs) {
+				terminalLogs = json.logs;
+				if (json.status) {
+					terminalRunStatus = json.status;
+				}
+				if (!json.inProgress && terminalPollingInterval) {
+					clearInterval(terminalPollingInterval);
+					terminalPollingInterval = null;
+				}
+			} else if (res.status === 401 || res.status === 403) {
+				terminalLogs = json?.error || 'Authentication required. You might need to sign in with GitHub or check token permissions.';
+			} else {
+				terminalLogs = json?.error || 'Failed to load logs for this workflow run.';
+			}
+		} catch (e) {
+			console.error('Failed to load logs', e);
+			if (!isPolling) {
+				terminalLogs = 'Failed to fetch logs.';
+			}
+		} finally {
+			if (!isPolling) {
+				terminalLoading = false;
+			}
+		}
+	}
+
 	async function openTerminal(runId: string, repo: string, title: string, status: string) {
 		terminalTitle = title;
 		terminalRunId = runId;
 		terminalRunStatus = status;
 		terminalRepo = repo;
 		terminalLogs = '';
-		terminalLoading = true;
 		terminalOpen = true;
 
-		try {
-			const res = await fetch(`/api/repo/${repo}/logs?runId=${runId}`);
-			if (res.ok) {
-				const json = await res.json();
-				terminalLogs = json.logs || 'No logs available for this run.';
-			} else {
-				terminalLogs = 'Failed to load logs. You might need to sign in with GitHub.';
-			}
-		} catch (e) {
-			console.error('Failed to load logs', e);
-			terminalLogs = 'Failed to fetch logs.';
-		} finally {
-			terminalLoading = false;
+		if (terminalPollingInterval) {
+			clearInterval(terminalPollingInterval);
+			terminalPollingInterval = null;
+		}
+
+		await fetchTerminalLogs(false);
+
+		// If workflow is still executing, poll step updates every 4 seconds
+		if (terminalRunStatus === 'in_progress' || terminalRunStatus === 'queued') {
+			terminalPollingInterval = setInterval(() => {
+				if (terminalOpen && (terminalRunStatus === 'in_progress' || terminalRunStatus === 'queued')) {
+					fetchTerminalLogs(true);
+				} else if (terminalPollingInterval) {
+					clearInterval(terminalPollingInterval);
+					terminalPollingInterval = null;
+				}
+			}, 4000);
 		}
 	}
 
@@ -1565,6 +1614,16 @@
 				<div class="flex items-center gap-3">
 					<TerminalIcon size={15} class="text-cyan-400" />
 					<h3 class="text-white text-xs font-bold tracking-wider uppercase">{terminalTitle} Execution Logs</h3>
+					{#if terminalRunStatus === 'in_progress' || terminalRunStatus === 'queued'}
+						<div class="w-px h-3.5 bg-white/10 mx-1"></div>
+						<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-[10px] font-mono text-cyan-400 font-semibold">
+							<span class="relative flex h-2 w-2">
+								<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+								<span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+							</span>
+							LIVE RUNNING
+						</span>
+					{/if}
 					{#if data.session && (terminalRunStatus === 'failure' || terminalRunStatus === 'timed_out' || terminalRunStatus === 'cancelled')}
 						<div class="w-px h-3.5 bg-white/10 mx-2"></div>
 						<button
@@ -1580,12 +1639,23 @@
 						</button>
 					{/if}
 				</div>
-				<button
-					onclick={() => (terminalOpen = false)}
-					class="text-slate-400 hover:text-white transition-colors bg-[#161b22] hover:bg-white/10 p-1 rounded"
-				>
-					<X size={15} />
-				</button>
+				<div class="flex items-center gap-2">
+					<button
+						onclick={() => fetchTerminalLogs(false)}
+						disabled={terminalLoading}
+						class="text-slate-400 hover:text-white transition-colors bg-[#161b22] hover:bg-white/10 p-1.5 rounded flex items-center gap-1 text-[11px]"
+						title="Refresh logs"
+					>
+						<RefreshCw size={13} class={terminalLoading ? 'animate-spin' : ''} />
+						<span class="text-[10px]">Refresh</span>
+					</button>
+					<button
+						onclick={closeTerminal}
+						class="text-slate-400 hover:text-white transition-colors bg-[#161b22] hover:bg-white/10 p-1 rounded"
+					>
+						<X size={15} />
+					</button>
+				</div>
 			</div>
 
 			<!-- Terminal Body -->
