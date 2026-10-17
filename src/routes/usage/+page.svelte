@@ -9,7 +9,8 @@
 		Clock,
 		ArrowUpRight,
 		RefreshCw,
-		CheckCircle2
+		CheckCircle2,
+		Radio
 	} from '@lucide/svelte';
 	import type { PageData } from './$types';
 
@@ -58,6 +59,32 @@
 			</a>
 		</div>
 	</div>
+
+	<!-- Option C Dual-Mode Telemetry Beacon (Standby Mode) -->
+	{#if usage.model_breakdown.length === 0}
+		<div class="rounded-xl bg-cyan-950/20 border border-cyan-500/30 p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+			<div class="flex items-center gap-3">
+				<div class="p-2.5 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shrink-0">
+					<Radio size={20} class="animate-pulse text-cyan-400" />
+				</div>
+				<div>
+					<div class="text-sm font-mono font-semibold text-white flex items-center gap-2">
+						Awaiting Local Agent Telemetry
+						<span class="px-2 py-0.5 rounded text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-mono">Option C Dual-Mode</span>
+					</div>
+					<p class="text-xs text-slate-400 mt-1">
+						Local metrics persist to <code class="text-cyan-300 bg-white/5 px-1 py-0.5 rounded">~/.autonomic/state/heart/heart.db</code>. Run locally via <code class="text-cyan-300 bg-white/5 px-1 py-0.5 rounded">autonomic dashboard</code> or bridge live events to a cloud NATS broker.
+					</p>
+				</div>
+			</div>
+			<div class="flex items-center gap-2 self-end md:self-auto shrink-0">
+				<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-mono">
+					<span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
+					Gateway Standby
+				</span>
+			</div>
+		</div>
+	{/if}
 
 	<!-- Top 3 Mission Control Metric Cards -->
 	<div class="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -182,20 +209,26 @@
 			</div>
 
 			<div class="space-y-4">
-				{#each usage.organ_breakdown as organ}
-					<div class="space-y-1.5">
-						<div class="flex items-center justify-between text-xs font-mono">
-							<span class="text-slate-300 font-semibold">{organ.organ}</span>
-							<span class="text-slate-400">{formatCurrency(organ.cost_usd)} ({organ.pct_of_total}%)</span>
-						</div>
-						<div class="w-full bg-white/[0.06] rounded-full h-1.5 overflow-hidden">
-							<div
-								class="bg-cyan-500/80 h-1.5 rounded-full"
-								style="width: {organ.pct_of_total}%"
-							></div>
-						</div>
+				{#if usage.organ_breakdown.length === 0}
+					<div class="py-10 text-center text-slate-500 font-mono text-xs">
+						No organ spend recorded yet
 					</div>
-				{/each}
+				{:else}
+					{#each usage.organ_breakdown as organ}
+						<div class="space-y-1.5">
+							<div class="flex items-center justify-between text-xs font-mono">
+								<span class="text-slate-300 font-semibold">{organ.organ}</span>
+								<span class="text-slate-400">{formatCurrency(organ.cost_usd)} ({organ.pct_of_total}%)</span>
+							</div>
+							<div class="w-full bg-white/[0.06] rounded-full h-1.5 overflow-hidden">
+								<div
+									class="bg-cyan-500/80 h-1.5 rounded-full"
+									style="width: {organ.pct_of_total}%"
+								></div>
+							</div>
+						</div>
+					{/each}
+				{/if}
 			</div>
 		</div>
 
@@ -222,17 +255,29 @@
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-white/[0.04]">
-					{#each usage.model_breakdown as item}
-						<tr class="hover:bg-white/[0.02] transition-colors">
-							<td class="py-3 px-3 font-semibold text-slate-100">{item.model}</td>
-							<td class="py-3 px-3 text-slate-400">{item.provider}</td>
-							<td class="py-3 px-3 text-right text-slate-300">{item.turns}</td>
-							<td class="py-3 px-3 text-right text-slate-300">{formatTokens(item.total_tokens)}</td>
-							<td class="py-3 px-3 text-right text-cyan-400">{item.cache_hit_pct.toFixed(1)}%</td>
-							<td class="py-3 px-3 text-right text-slate-100 font-bold">{formatCurrency(item.cost_usd)}</td>
-							<td class="py-3 px-3 text-right text-emerald-400 font-semibold">+{formatCurrency(item.dollars_saved)}</td>
+					{#if usage.model_breakdown.length === 0}
+						<tr>
+							<td colspan="7" class="py-12 px-3 text-center text-slate-500 font-mono text-xs">
+								<div class="flex flex-col items-center justify-center gap-2">
+									<Radio size={20} class="text-cyan-400/50 animate-pulse" />
+									<span class="text-slate-300 font-semibold">No turn calls recorded yet</span>
+									<span class="text-slate-500 text-[11px]">Awaiting live usage telemetry on NATS stream events.heart.usage</span>
+								</div>
+							</td>
 						</tr>
-					{/each}
+					{:else}
+						{#each usage.model_breakdown as item}
+							<tr class="hover:bg-white/[0.02] transition-colors">
+								<td class="py-3 px-3 font-semibold text-slate-100">{item.model}</td>
+								<td class="py-3 px-3 text-slate-400">{item.provider}</td>
+								<td class="py-3 px-3 text-right text-slate-300">{item.turns}</td>
+								<td class="py-3 px-3 text-right text-slate-300">{formatTokens(item.total_tokens)}</td>
+								<td class="py-3 px-3 text-right text-cyan-400">{item.cache_hit_pct.toFixed(1)}%</td>
+								<td class="py-3 px-3 text-right text-slate-100 font-bold">{formatCurrency(item.cost_usd)}</td>
+								<td class="py-3 px-3 text-right text-emerald-400 font-semibold">+{formatCurrency(item.dollars_saved)}</td>
+							</tr>
+						{/each}
+					{/if}
 				</tbody>
 			</table>
 		</div>
