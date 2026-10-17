@@ -828,7 +828,7 @@
 				<Layers size={14} class="text-indigo-400" />
 			</div>
 			<div class="flex items-baseline gap-2 mb-1">
-				<span class="text-xl sm:text-2xl font-mono font-bold text-white tracking-tight">v1.0.0-beta.1</span>
+				<span class="text-xl sm:text-2xl font-mono font-bold text-white tracking-tight">v1.0.0-beta.3</span>
 			</div>
 			<div class="text-[11px] font-sans text-slate-400 flex items-center justify-between pt-2 border-t border-white/[0.06]">
 				<span>Doctor min compatibility</span>
@@ -1196,7 +1196,7 @@
 				</div>
 			{:else if pulls.length === 0}
 				<div class="text-center py-16 bg-[#0d1117] border border-white/10 rounded-xl font-mono text-sm text-slate-400">
-					All organ PRs are merged. Master branches synchronized at v1.0.0-beta.1.
+					All organ PRs are merged. Master branches synchronized at v1.0.0-beta.3.
 				</div>
 			{:else}
 				<div class="flex flex-col gap-4">
