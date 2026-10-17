@@ -175,12 +175,37 @@
 
 	let terminalPollingInterval: any = null;
 
-	function closeTerminal() {
-		terminalOpen = false;
+	function isRunActive(status?: string): boolean {
+		if (!status) return false;
+		const s = String(status).toLowerCase();
+		return s === 'in_progress' || s === 'queued' || s === 'pending' || s === 'waiting' || s === 'requested';
+	}
+
+	function startLogPolling() {
 		if (terminalPollingInterval) {
 			clearInterval(terminalPollingInterval);
 			terminalPollingInterval = null;
 		}
+		// Poll active runs every 4 seconds
+		terminalPollingInterval = setInterval(() => {
+			if (terminalOpen && (isRunActive(terminalRunStatus) || terminalLoading)) {
+				fetchTerminalLogs(true);
+			} else {
+				stopLogPolling();
+			}
+		}, 4000);
+	}
+
+	function stopLogPolling() {
+		if (terminalPollingInterval) {
+			clearInterval(terminalPollingInterval);
+			terminalPollingInterval = null;
+		}
+	}
+
+	function closeTerminal() {
+		terminalOpen = false;
+		stopLogPolling();
 	}
 
 	async function fetchTerminalLogs(isPolling = false) {
@@ -198,14 +223,19 @@
 				if (json.status) {
 					terminalRunStatus = json.status;
 				}
-				if (!json.inProgress && terminalPollingInterval) {
-					clearInterval(terminalPollingInterval);
-					terminalPollingInterval = null;
+				if (json.inProgress || isRunActive(json.status) || isRunActive(terminalRunStatus)) {
+					if (!terminalPollingInterval && terminalOpen) {
+						startLogPolling();
+					}
+				} else {
+					stopLogPolling();
 				}
 			} else if (res.status === 401 || res.status === 403) {
 				terminalLogs = json?.error || 'Authentication required. Please sign in with GitHub or check token permissions.';
+				stopLogPolling();
 			} else {
 				terminalLogs = json?.error ? `Error: ${json.error}` : 'Failed to fetch logs.';
+				stopLogPolling();
 			}
 		} catch (e) {
 			console.error('Failed to fetch logs:', e);
@@ -226,23 +256,13 @@
 		terminalRunStatus = status;
 		terminalLogs = '';
 
-		if (terminalPollingInterval) {
-			clearInterval(terminalPollingInterval);
-			terminalPollingInterval = null;
-		}
+		stopLogPolling();
 
 		await fetchTerminalLogs(false);
 
 		// If running, poll every 4 seconds
-		if (terminalRunStatus === 'in_progress' || terminalRunStatus === 'queued') {
-			terminalPollingInterval = setInterval(() => {
-				if (terminalOpen && (terminalRunStatus === 'in_progress' || terminalRunStatus === 'queued')) {
-					fetchTerminalLogs(true);
-				} else if (terminalPollingInterval) {
-					clearInterval(terminalPollingInterval);
-					terminalPollingInterval = null;
-				}
-			}, 4000);
+		if (isRunActive(terminalRunStatus)) {
+			startLogPolling();
 		}
 	}
 
@@ -1504,13 +1524,13 @@
 					<span class="w-3 h-3 rounded-full bg-yellow-500/80 inline-block"></span>
 					<span class="w-3 h-3 rounded-full bg-green-500/80 inline-block"></span>
 					<span class="text-slate-400 ml-2">CONSOLE // {terminalTitle} (Run #{terminalRunId})</span>
-					{#if terminalRunStatus === 'in_progress' || terminalRunStatus === 'queued'}
+					{#if isRunActive(terminalRunStatus)}
 						<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-[10px] font-mono text-cyan-400 font-semibold ml-2">
 							<span class="relative flex h-2 w-2">
 								<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
 								<span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
 							</span>
-							LIVE
+							LIVE RUNNING
 						</span>
 					{/if}
 				</div>
