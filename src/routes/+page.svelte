@@ -1293,8 +1293,8 @@
 									{#each repoPulls as pr}
 										{@const prKey = getPRKey(repoName, pr.number)}
 										{@const isSelected = selectedPRs.has(prKey)}
-										<div class="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-white/[0.02] transition-colors {isSelected ? 'bg-cyan-500/[0.03]' : ''}">
-											<div class="flex items-start gap-3">
+										<div class="p-5 flex flex-col md:flex-row md:items-start justify-between gap-4 hover:bg-white/[0.02] transition-colors {isSelected ? 'bg-cyan-500/[0.03]' : ''}">
+											<div class="flex items-start gap-3 min-w-0 flex-1">
 												{#if data.session}
 													<input
 														type="checkbox"
@@ -1312,59 +1312,58 @@
 																			? 'Cannot select: checks running'
 																			: 'Cannot select: blocked'
 															: 'Select for batch merge'}
-														class="mt-1 h-4 w-4 rounded border-white/20 bg-[#161b22] text-cyan-400 focus:ring-cyan-500/30 cursor-pointer disabled:cursor-not-allowed disabled:opacity-30"
+														class="mt-1 h-4 w-4 shrink-0 rounded border-white/20 bg-[#161b22] text-cyan-400 focus:ring-cyan-500/30 cursor-pointer disabled:cursor-not-allowed disabled:opacity-30"
 													/>
 												{/if}
 
-												<div class="flex flex-col">
-													<div class="flex flex-wrap items-center gap-2 mb-1.5">
+												<div class="flex flex-col min-w-0 flex-1">
+													<div class="flex flex-wrap items-center gap-x-2 gap-y-1.5 mb-1.5">
 														<a
 															href={pr.url}
 															target="_blank"
 															rel="noopener noreferrer"
-															class="font-mono font-semibold text-slate-200 hover:text-cyan-400 text-sm flex items-center gap-1.5"
+															class="font-mono font-semibold text-slate-200 hover:text-cyan-400 text-sm break-words inline"
 														>
-															<span>#{pr.number} {pr.title}</span>
-															<ExternalLink size={12} class="opacity-60" />
+															#{pr.number} {pr.title}<ExternalLink size={12} class="inline -mt-0.5 ml-1.5 opacity-60 shrink-0" />
 														</a>
 
 														<!-- Comprehensive Status Badges -->
 														{#if pr.isBehind}
-															<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1">
+															<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1 shrink-0">
 																<AlertCircle size={11} />
 																<span>Branch Outdated</span>
 															</span>
 														{/if}
 														{#if pr.isDirty}
-															<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30 flex items-center gap-1">
+															<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30 flex items-center gap-1 shrink-0">
 																<XCircle size={11} />
 																<span>Conflicts</span>
 															</span>
 														{/if}
 														{#if pr.status === 'failure' || pr.status === 'cancelled'}
-															<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30 flex items-center gap-1">
+															<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30 flex items-center gap-1 shrink-0">
 																<XCircle size={11} />
 																<span>Checks Failed</span>
 															</span>
 														{:else if pr.status === 'in_progress' || pr.status === 'queued'}
-															<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 flex items-center gap-1">
+															<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 flex items-center gap-1 shrink-0">
 																<RefreshCw size={11} class="animate-spin" />
 																<span>Checks Running</span>
 															</span>
 														{:else if pr.isBlocked && !pr.isBehind && !pr.isDirty}
-															<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/30 flex items-center gap-1">
+															<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/30 flex items-center gap-1 shrink-0">
 																<Clock size={11} />
 																<span>Merge Blocked</span>
 															</span>
 														{/if}
 														{#if pr.canMerge}
-															<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+															<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 shrink-0">
 																<CheckCircle size={11} />
 																<span>Ready to Merge</span>
 															</span>
 														{/if}
 														{#if pr.isDraft}
-															<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-slate-500/15 text-slate-400 border border-slate-500/30">
+															<span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-slate-500/15 text-slate-400 border border-slate-500/30 shrink-0">
 																Draft
 															</span>
 														{/if}
@@ -1402,7 +1401,7 @@
 											</div>
 
 											<!-- Action Controls -->
-											<div class="flex items-center gap-2.5 shrink-0 self-end md:self-center">
+											<div class="flex items-center gap-2.5 shrink-0 self-end md:self-start mt-0.5">
 												<!-- Outdated Branch Fix Button -->
 												{#if pr.isBehind && data.session}
 													<button

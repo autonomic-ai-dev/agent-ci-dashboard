@@ -5,6 +5,9 @@ name: CI
 on:
   pull_request:
     branches: [master]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
   push:
     branches: [master]
     paths:
@@ -21,6 +24,8 @@ on:
       - "scripts/**"
       - ".github/workflows/**"
       - ".github/pipelines/**"
+      - "!**.md"
+      - "!docs/**"
   workflow_dispatch:
   workflow_call:
 
