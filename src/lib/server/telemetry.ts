@@ -37,12 +37,16 @@ class TelemetryStore {
 	private events: IngestedModelUsageEvent[] = [];
 	private quotas: Map<string, IngestedProviderQuota> = new Map();
 	private subscribers: Set<Subscriber> = new Set();
-	private maxEvents = 500;
+	private maxEvents = 10000;
 
-	public ingest(batch: TelemetryBatchPayload): { ingested_events: number; ingested_quotas: number } {
+	public ingest(batch: TelemetryBatchPayload): {
+		ingested_events: number;
+		ingested_quotas: number;
+	} {
 		let eventCount = 0;
 		if (batch.events && Array.isArray(batch.events)) {
 			for (const evt of batch.events) {
+				if (this.events.some((existing) => existing.id === evt.id)) continue;
 				this.events.unshift(evt);
 				eventCount++;
 				this.broadcast({ type: 'usage_event', payload: evt });
@@ -70,6 +74,10 @@ class TelemetryStore {
 
 	public getRecentEvents(limit = 50): IngestedModelUsageEvent[] {
 		return this.events.slice(0, limit);
+	}
+
+	public getEvents(): IngestedModelUsageEvent[] {
+		return [...this.events];
 	}
 
 	public getActiveQuotas(): IngestedProviderQuota[] {
